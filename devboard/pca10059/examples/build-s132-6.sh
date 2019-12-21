@@ -7,3 +7,9 @@ IRQNAMES=../../../../hal/irq
 OUT=hex
 
 . ../../../../../scripts/build.sh $@
+
+family=NRF52840
+bootversion=1
+appversion=1
+
+. ../../../../../scripts/nrf5-settings.sh
