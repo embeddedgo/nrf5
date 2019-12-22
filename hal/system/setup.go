@@ -4,7 +4,10 @@
 
 package system
 
-import "github.com/embeddedgo/nrf5/hal/clock"
+import (
+	"github.com/embeddedgo/nrf5/hal/clock"
+	"github.com/embeddedgo/nrf5/p/nvmc"
+)
 
 // Setup setups nRF51 to operate using specified HFCLK and LFCLK clock sources..
 func Setup(hfsrc, lfsrc clock.Source, lfena bool) {
@@ -27,4 +30,5 @@ func Setup(hfsrc, lfsrc clock.Source, lfena bool) {
 			break
 		}
 	}
+	nvmc.NVMC().CACHEEN().Set()
 }

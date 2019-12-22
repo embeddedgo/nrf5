@@ -1,14 +1,16 @@
+// Copyright 2019 Michal Derkacz. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package uart
 
 import (
-	"bits"
-	"mmio"
+	"embedded/mmio"
 	"unsafe"
 
-	"nrf5/hal/gpio"
-	"nrf5/hal/te"
-
-	"nrf5/hal/internal/mmap"
+	"github.com/embeddedgo/nrf5/hal/gpio"
+	"github.com/embeddedgo/nrf5/hal/internal/mmap"
+	"github.com/embeddedgo/nrf5/hal/te"
 )
 
 type Periph struct {
@@ -28,8 +30,12 @@ type Periph struct {
 	config   mmio.U32
 }
 
-//emgo:const
-var UART0 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x02000))
+func UART(n int) *Periph {
+	if n != 0 {
+		return nil
+	}
+	return (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x02000))
+}
 
 type Task byte
 
@@ -164,7 +170,7 @@ const (
 	Baud115200 Baudrate = 0x01D7E000 // Actual rate: 115204 baud.
 	Baud230400 Baudrate = 0x03AFB000 // Actual rate: 230393 baud.
 	Baud250k   Baudrate = 0x04000000
-	Baud460800 Baudrate = 0x075F7000
+	Baud460800 Baudrate = 0x075F7000 // Actual rate: 470588 baud.
 	Baud921600 Baudrate = 0x0EBEE000 // Actual rate: 921585 baud.
 	Baud1M     Baudrate = 0x10000000
 )
@@ -186,3 +192,13 @@ func (p *Periph) LoadBAUDRATE() Baudrate {
 func (p *Periph) StoreBAUDRATE(br Baudrate) {
 	p.baudrate.Store(uint32(br))
 }
+
+type Config uint32
+
+const (
+	HWFC   Config = 0x01 << 0 // Hardware flow control
+	PARITY Config = 0x07 << 1 // Parity
+	STOP   Config = 0x01 << 4 //+ Stop bits
+	One    Config = 0x00 << 4 //  One stop bit
+	Two    Config = 0x01 << 4 //  Two stop bits
+)

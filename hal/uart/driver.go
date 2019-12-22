@@ -1,9 +1,11 @@
+// Copyright 2019 Michal Derkacz. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package uart
 
 import (
-	"sync/atomic"
-	"sync/fence"
-	"syscall"
+	"embedded/rtos"
 	"unsafe"
 )
 
@@ -27,27 +29,24 @@ func (e DriverError) Error() string {
 
 // Driver is interrupt based driver to UART peripheral.
 type Driver struct {
-	deadlineRx int64
-	deadlineTx int64
+	timeoutRx int64
+	timeoutTx int64
 
 	P *Periph
 
 	rxbuf   []byte
 	pi, pr  int
 	err     uint32
-	rxready syscall.Event
+	rxready rtos.Note
 
 	txn    int
 	txdata string
-	txdone syscall.Event
+	txdone rtos.Note
 }
 
 // NewDriver provides convenient way to create heap allocated Driver.
 func NewDriver(p *Periph, rxbuf []byte) *Driver {
-	d := new(Driver)
-	d.P = p
-	d.rxbuf = rxbuf
-	return d
+	return &Driver{deadlineRx: -1, deadlineTx: -1, P: p, rxbuf: rxbuf}
 }
 
 func (d *Driver) Enable() {
@@ -61,10 +60,6 @@ func (d *Driver) Disable() {
 // EnableRx enables UART receiver. EnableRx must be called before any of Read*
 // methods.
 func (d *Driver) EnableRx() {
-	if d.rxready == 0 {
-		d.rxready = syscall.AssignEvent()
-		fence.W() // Ensure rxready is stored before enable IRQ.
-	}
 	p := d.P
 	p.Event(RXDRDY).Clear()
 	p.Event(ERROR).Clear()
@@ -83,10 +78,6 @@ func (d *Driver) DisableRx() {
 // EnableTx enables UART transmitter. EnableTx must be called before any of
 // Write* methods.
 func (d *Driver) EnableTx() {
-	if d.txdone == 0 {
-		d.txdone = syscall.AssignEvent()
-		fence.W() // Ensure txdone is stored before enable IRQ.
-	}
 	p := d.P
 	p.Event(TXDRDY).Clear()
 	p.Event(TXDRDY).EnableIRQ()
@@ -97,7 +88,7 @@ func (d *Driver) EnableTx() {
 func (d *Driver) DisableTx() {
 	p := d.P
 	p.Task(STOPTX).Trigger()
-	p.Event(TXDRDY).NVIRQ().Disable()
+	p.Event(TXDRDY).DisableIRQ()
 }
 
 func (d *Driver) SetReadDeadline(t int64) {
@@ -120,12 +111,11 @@ func (d *Driver) ISR() {
 			if nextpi == len(d.rxbuf) {
 				nextpi = 0
 			}
-			if atomic.LoadInt(&d.pr) == nextpi {
+			if d.pr == nextpi {
 				atomic.OrUint32(&d.err, uint32(ErrBufOverflow)<<8)
 			} else {
 				d.rxbuf[d.pi] = b
-				fence.W_SMP() // store(d.rxbuf) must be before store(d.pi).
-				atomic.StoreInt(&d.pi, nextpi)
+				d.pi = nextpi
 			}
 			again = true
 		}
@@ -137,18 +127,17 @@ func (d *Driver) ISR() {
 			again = true
 		}
 		if again {
-			d.rxready.Send()
+			d.rxready.Wakeup()
 		}
 		if p.Event(TXDRDY).IsSet() {
 			p.Event(TXDRDY).Clear()
-			fence.W() // clear(TXDRDY) must be observed before d.offs == 0.
-			atomic.StoreInt(&d.txn, d.txn+1)
+			d.txn++
 			if uint(d.txn) < uint(len(d.txdata)) {
 				// Uints above allow compiler to optimize bounds checking below.
 				p.StoreTXD(d.txdata[d.txn])
 				again = true
 			} else {
-				d.txdone.Send()
+				d.txdone.Wakeup()
 			}
 		}
 		if !again {
