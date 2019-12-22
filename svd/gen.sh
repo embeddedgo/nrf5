@@ -7,11 +7,12 @@ rm -rf *
 
 svdxgen github.com/embeddedgo/nrf5/p ../svd/*.svd
 
-#for p in gpio; do
-#	cd $p
-#	xgen *.go
-#	cd ..
-#done
+for p in gpio uicr; do
+	cd $p
+	xgen *.go
+	#GOOS=noos GOARCH=thumb go build -tags nrf52840
+	cd ..
+done
 
 rm -f ../hal/irq/*
 
