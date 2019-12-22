@@ -179,8 +179,8 @@ type RMDETECTMODE struct{ mmio.UM32 }
 func (rm RMDETECTMODE) Load() DETECTMODE   { return DETECTMODE(rm.UM32.Load()) }
 func (rm RMDETECTMODE) Store(b DETECTMODE) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) LDETECT() RMDETECTMODE {
-	return RMDETECTMODE{mmio.UM32{&p.DETECTMODE.U32, uint32(LDETECT)}}
+func (p *Periph) DETECT() RMDETECTMODE {
+	return RMDETECTMODE{mmio.UM32{&p.DETECTMODE.U32, uint32(DETECT)}}
 }
 
 type PIN_CNF uint32

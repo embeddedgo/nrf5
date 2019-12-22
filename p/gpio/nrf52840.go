@@ -23,11 +23,13 @@
 package gpio
 
 const (
-	LDETECT DETECTMODE = 0x01 << 0 //+ Select between default DETECT signal behaviour and LDETECT mode
+	DETECT  DETECTMODE = 0x01 << 0 //+ Select between default DETECT signal behaviour and LDETECT mode
+	Direct  DETECTMODE = 0x00 << 0 //  DETECT directly connected to PIN DETECT signals
+	Latched DETECTMODE = 0x01 << 0 //  Use the latched LDETECT behaviour
 )
 
 const (
-	LDETECTn = 0
+	DETECTn = 0
 )
 
 const (
