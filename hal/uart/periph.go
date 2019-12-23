@@ -44,7 +44,7 @@ const (
 	STOPRX  Task = 1 // Stop UART receiver.
 	STARTTX Task = 2 // Start UART transmitter.
 	STOPTX  Task = 3 // Stop UART transmitter.
-	SUSPEND Task = 7 // Suspend UART. (nRF52)
+	SUSPEND Task = 7 // Suspend UART. nRF52.
 )
 
 type Event byte
@@ -198,7 +198,15 @@ type Config uint32
 const (
 	HWFC   Config = 0x01 << 0 // Hardware flow control
 	PARITY Config = 0x07 << 1 // Parity
-	STOP   Config = 0x01 << 4 //+ Stop bits
-	One    Config = 0x00 << 4 //  One stop bit
-	Two    Config = 0x01 << 4 //  Two stop bits
+	STOP2  Config = 0x01 << 4 // Two stop bits
 )
+
+// LoadCONFIG returns configuration. nRF52.
+func (p *Periph) LoadCONFIG() Baudrate {
+	return Config(p.config.Load())
+}
+
+// StoreCONFIG stores baudrate. nRF52.
+func (p *Periph) StoreCONFIG(cfg Config) {
+	p.config.Store(uint32(cfg))
+}
