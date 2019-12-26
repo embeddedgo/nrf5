@@ -156,8 +156,8 @@ type RMDEVICEADDRTYPE struct{ mmio.UM32 }
 func (rm RMDEVICEADDRTYPE) Load() DEVICEADDRTYPE   { return DEVICEADDRTYPE(rm.UM32.Load()) }
 func (rm RMDEVICEADDRTYPE) Store(b DEVICEADDRTYPE) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) DEVADDRTYPE() RMDEVICEADDRTYPE {
-	return RMDEVICEADDRTYPE{mmio.UM32{&p.DEVICEADDRTYPE.U32, uint32(DEVADDRTYPE)}}
+func (p *Periph) PUBLIC() RMDEVICEADDRTYPE {
+	return RMDEVICEADDRTYPE{mmio.UM32{&p.DEVICEADDRTYPE.U32, uint32(PUBLIC)}}
 }
 
 type DEVICEADDR uint32
@@ -196,9 +196,7 @@ type RMINFO_PART struct{ mmio.UM32 }
 func (rm RMINFO_PART) Load() INFO_PART   { return INFO_PART(rm.UM32.Load()) }
 func (rm RMINFO_PART) Store(b INFO_PART) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) PART() RMINFO_PART {
-	return RMINFO_PART{mmio.UM32{&p.INFO_PART.U32, uint32(PART)}}
-}
+func (p *Periph) PART() RMINFO_PART { return RMINFO_PART{mmio.UM32{&p.INFO_PART.U32, uint32(PART)}} }
 
 type INFO_VARIANT uint32
 
@@ -260,9 +258,7 @@ type RMINFO_RAM struct{ mmio.UM32 }
 func (rm RMINFO_RAM) Load() INFO_RAM   { return INFO_RAM(rm.UM32.Load()) }
 func (rm RMINFO_RAM) Store(b INFO_RAM) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) RAM() RMINFO_RAM {
-	return RMINFO_RAM{mmio.UM32{&p.INFO_RAM.U32, uint32(RAM)}}
-}
+func (p *Periph) RAM() RMINFO_RAM { return RMINFO_RAM{mmio.UM32{&p.INFO_RAM.U32, uint32(RAM)}} }
 
 type INFO_FLASH uint32
 
@@ -322,9 +318,7 @@ type RMTEMP_A struct{ mmio.UM32 }
 func (rm RMTEMP_A) Load() TEMP_A   { return TEMP_A(rm.UM32.Load()) }
 func (rm RMTEMP_A) Store(b TEMP_A) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) A(n int) RMTEMP_A {
-	return RMTEMP_A{mmio.UM32{&p.TEMP_A[n].U32, uint32(A)}}
-}
+func (p *Periph) A(n int) RMTEMP_A { return RMTEMP_A{mmio.UM32{&p.TEMP_A[n].U32, uint32(A)}} }
 
 type TEMP_B uint32
 
@@ -342,9 +336,7 @@ type RMTEMP_B struct{ mmio.UM32 }
 func (rm RMTEMP_B) Load() TEMP_B   { return TEMP_B(rm.UM32.Load()) }
 func (rm RMTEMP_B) Store(b TEMP_B) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) B(n int) RMTEMP_B {
-	return RMTEMP_B{mmio.UM32{&p.TEMP_B[n].U32, uint32(B)}}
-}
+func (p *Periph) B(n int) RMTEMP_B { return RMTEMP_B{mmio.UM32{&p.TEMP_B[n].U32, uint32(B)}} }
 
 type TEMP_T uint32
 
@@ -362,9 +354,7 @@ type RMTEMP_T struct{ mmio.UM32 }
 func (rm RMTEMP_T) Load() TEMP_T   { return TEMP_T(rm.UM32.Load()) }
 func (rm RMTEMP_T) Store(b TEMP_T) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) T(n int) RMTEMP_T {
-	return RMTEMP_T{mmio.UM32{&p.TEMP_T[n].U32, uint32(T)}}
-}
+func (p *Periph) T(n int) RMTEMP_T { return RMTEMP_T{mmio.UM32{&p.TEMP_T[n].U32, uint32(T)}} }
 
 type NFC_TAGHEADER0 uint32
 

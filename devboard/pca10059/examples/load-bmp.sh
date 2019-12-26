@@ -1,0 +1,1 @@
+../../../../scripts/load-bmp.sh

@@ -203,18 +203,10 @@ func (p *Periph) DIRECTION(n int) RMPIN_CNF {
 	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DIRECTION)}}
 }
 
-func (p *Periph) INPUT(n int) RMPIN_CNF {
-	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(INPUT)}}
-}
+func (p *Periph) INPUT(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(INPUT)}} }
 
-func (p *Periph) PULL(n int) RMPIN_CNF {
-	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(PULL)}}
-}
+func (p *Periph) PULL(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(PULL)}} }
 
-func (p *Periph) DRIVE(n int) RMPIN_CNF {
-	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DRIVE)}}
-}
+func (p *Periph) DRIVE(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DRIVE)}} }
 
-func (p *Periph) SENSE(n int) RMPIN_CNF {
-	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(SENSE)}}
-}
+func (p *Periph) SENSE(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(SENSE)}} }

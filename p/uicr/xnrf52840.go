@@ -127,9 +127,7 @@ type RMAPPROTECT struct{ mmio.UM32 }
 func (rm RMAPPROTECT) Load() APPROTECT   { return APPROTECT(rm.UM32.Load()) }
 func (rm RMAPPROTECT) Store(b APPROTECT) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) PALL() RMAPPROTECT {
-	return RMAPPROTECT{mmio.UM32{&p.APPROTECT.U32, uint32(PALL)}}
-}
+func (p *Periph) PALL() RMAPPROTECT { return RMAPPROTECT{mmio.UM32{&p.APPROTECT.U32, uint32(PALL)}} }
 
 type NFCPINS uint32
 
@@ -147,9 +145,7 @@ type RMNFCPINS struct{ mmio.UM32 }
 func (rm RMNFCPINS) Load() NFCPINS   { return NFCPINS(rm.UM32.Load()) }
 func (rm RMNFCPINS) Store(b NFCPINS) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) PROTECT() RMNFCPINS {
-	return RMNFCPINS{mmio.UM32{&p.NFCPINS.U32, uint32(PROTECT)}}
-}
+func (p *Periph) PROTECT() RMNFCPINS { return RMNFCPINS{mmio.UM32{&p.NFCPINS.U32, uint32(PROTECT)}} }
 
 type DEBUGCTRL uint32
 
@@ -193,6 +189,4 @@ type RMREGOUT0 struct{ mmio.UM32 }
 func (rm RMREGOUT0) Load() REGOUT0   { return REGOUT0(rm.UM32.Load()) }
 func (rm RMREGOUT0) Store(b REGOUT0) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) VOUT() RMREGOUT0 {
-	return RMREGOUT0{mmio.UM32{&p.REGOUT0.U32, uint32(VOUT)}}
-}
+func (p *Periph) VOUT() RMREGOUT0 { return RMREGOUT0{mmio.UM32{&p.REGOUT0.U32, uint32(VOUT)}} }

@@ -1,0 +1,1 @@
+../../../../scripts/debug-bmp.sh

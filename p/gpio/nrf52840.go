@@ -23,9 +23,7 @@
 package gpio
 
 const (
-	DETECT  DETECTMODE = 0x01 << 0 //+ Select between default DETECT signal behaviour and LDETECT mode
-	Direct  DETECTMODE = 0x00 << 0 //  DETECT directly connected to PIN DETECT signals
-	Latched DETECTMODE = 0x01 << 0 //  Use the latched LDETECT behaviour
+	DETECT DETECTMODE = 0x01 << 0 //+ Select between default DETECT signal behaviour and LDETECT mode
 )
 
 const (
@@ -33,29 +31,25 @@ const (
 )
 
 const (
-	DIRECTION  PIN_CNF = 0x01 << 0  //+ Pin direction. Same physical register as DIR register
-	Input      PIN_CNF = 0x00 << 0  //  Configure pin as an input pin
-	Output     PIN_CNF = 0x01 << 0  //  Configure pin as an output pin
-	INPUT      PIN_CNF = 0x01 << 1  //+ Connect or disconnect input buffer
-	Connect    PIN_CNF = 0x00 << 1  //  Connect input buffer
-	Disconnect PIN_CNF = 0x01 << 1  //  Disconnect input buffer
-	PULL       PIN_CNF = 0x03 << 2  //+ Pull configuration
-	NoPull     PIN_CNF = 0x00 << 2  //  No pull
-	Pulldown   PIN_CNF = 0x01 << 2  //  Pull down on pin
-	Pullup     PIN_CNF = 0x03 << 2  //  Pull up on pin
-	DRIVE      PIN_CNF = 0x07 << 8  //+ Drive configuration
-	S0S1       PIN_CNF = 0x00 << 8  //  Standard '0', standard '1'
-	H0S1       PIN_CNF = 0x01 << 8  //  High drive '0', standard '1'
-	S0H1       PIN_CNF = 0x02 << 8  //  Standard '0', high drive '1'
-	H0H1       PIN_CNF = 0x03 << 8  //  High drive '0', high 'drive '1''
-	D0S1       PIN_CNF = 0x04 << 8  //  Disconnect '0' standard '1' (normally used for wired-or connections)
-	D0H1       PIN_CNF = 0x05 << 8  //  Disconnect '0', high drive '1' (normally used for wired-or connections)
-	S0D1       PIN_CNF = 0x06 << 8  //  Standard '0'. disconnect '1' (normally used for wired-and connections)
-	H0D1       PIN_CNF = 0x07 << 8  //  High drive '0', disconnect '1' (normally used for wired-and connections)
-	SENSE      PIN_CNF = 0x03 << 16 //+ Pin sensing mechanism
-	Disabled   PIN_CNF = 0x00 << 16 //  Disabled
-	High       PIN_CNF = 0x02 << 16 //  Sense for high level
-	Low        PIN_CNF = 0x03 << 16 //  Sense for low level
+	DIRECTION PIN_CNF = 0x01 << 0  //+ Pin direction. Same physical register as DIR register
+	INPUT     PIN_CNF = 0x01 << 1  //+ Connect or disconnect input buffer
+	PULL      PIN_CNF = 0x03 << 2  //+ Pull configuration
+	NoPull    PIN_CNF = 0x00 << 2  //  No pull
+	Pulldown  PIN_CNF = 0x01 << 2  //  Pull down on pin
+	Pullup    PIN_CNF = 0x03 << 2  //  Pull up on pin
+	DRIVE     PIN_CNF = 0x07 << 8  //+ Drive configuration
+	S0S1      PIN_CNF = 0x00 << 8  //  Standard '0', standard '1'
+	H0S1      PIN_CNF = 0x01 << 8  //  High drive '0', standard '1'
+	S0H1      PIN_CNF = 0x02 << 8  //  Standard '0', high drive '1'
+	H0H1      PIN_CNF = 0x03 << 8  //  High drive '0', high 'drive '1''
+	D0S1      PIN_CNF = 0x04 << 8  //  Disconnect '0' standard '1' (normally used for wired-or connections)
+	D0H1      PIN_CNF = 0x05 << 8  //  Disconnect '0', high drive '1' (normally used for wired-or connections)
+	S0D1      PIN_CNF = 0x06 << 8  //  Standard '0'. disconnect '1' (normally used for wired-and connections)
+	H0D1      PIN_CNF = 0x07 << 8  //  High drive '0', disconnect '1' (normally used for wired-and connections)
+	SENSE     PIN_CNF = 0x03 << 16 //+ Pin sensing mechanism
+	Disabled  PIN_CNF = 0x00 << 16 //  Disabled
+	High      PIN_CNF = 0x02 << 16 //  Sense for high level
+	Low       PIN_CNF = 0x03 << 16 //  Sense for low level
 )
 
 const (

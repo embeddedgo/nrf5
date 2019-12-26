@@ -20,11 +20,9 @@
 package uicr
 
 const (
-	PIN          PSELRESET = 0x1F << 0  //+ GPIO pin number onto which nRESET is exposed
-	PORT         PSELRESET = 0x01 << 5  //+ Port number onto which nRESET is exposed
-	CONNECT      PSELRESET = 0x01 << 31 //+ Connection
-	Connected    PSELRESET = 0x00 << 31 //  Connect
-	Disconnected PSELRESET = 0x01 << 31 //  Disconnect
+	PIN     PSELRESET = 0x1F << 0  //+ GPIO pin number onto which nRESET is exposed
+	PORT    PSELRESET = 0x01 << 5  //+ Port number onto which nRESET is exposed
+	CONNECT PSELRESET = 0x01 << 31 //+ Connection
 )
 
 const (
@@ -45,8 +43,6 @@ const (
 
 const (
 	PROTECT NFCPINS = 0x01 << 0 //+ Setting of pins dedicated to NFC functionality
-	GPIO    NFCPINS = 0x00 << 0 //  Operation as GPIO pins. Same protection as normal GPIO pins
-	NFC     NFCPINS = 0x01 << 0 //  Operation as NFC antenna pins. Configures the protection for NFC operation
 )
 
 const (

@@ -40,13 +40,11 @@
 package ficr
 
 const (
-	DEVADDRTYPE DEVICEADDRTYPE = 0x01 << 0 //+ Device address type
-	Public      DEVICEADDRTYPE = 0x00 << 0 //  Public address
-	Random      DEVICEADDRTYPE = 0x01 << 0 //  Random address
+	PUBLIC DEVICEADDRTYPE = 0x01 << 0 //+ Device address type
 )
 
 const (
-	DEVADDRTYPEn = 0
+	PUBLICn = 0
 )
 
 const (
