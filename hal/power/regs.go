@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package power provides interface to power managemnt peripheral.
+// Package power provides interface to the power managemnt peripheral.
 package power
 
 import (
@@ -10,8 +10,8 @@ import (
 	"embedded/rtos"
 	"unsafe"
 
-	"github.com/embeddedgo/nrf5/hal/internal/mmap"
 	"github.com/embeddedgo/nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/p/mmap"
 )
 
 type regs struct {
@@ -37,22 +37,25 @@ type regs struct {
 	ram       [8]struct{ power, powerset, powerclr mmio.U32 }
 }
 
-func r() *regs {
-	return (*regs)(unsafe.Pointer(mmap.APB_BASE))
-}
+func r() *regs { return (*regs)(unsafe.Pointer(mmap.POWER_BASE)) }
 
-func IRQ() rtos.IRQ {
-	return r().IRQ()
-}
-
+// IRQEnabled returns EventMask that lists events that have enabled
+// generating interrupts..
 func IRQEnabled() te.EventMask {
 	return r().IRQEnabled()
 }
 
+// EnableIRQ enables generating interrupts by events specified by mask.
 func EnableIRQ(mask te.EventMask) {
 	r().EnableIRQ(mask)
 }
 
+// DisableIRQ disables generating interrupts by events specified by mask
 func DisableIRQ(mask te.EventMask) {
 	r().DisableIRQ(mask)
+}
+
+// IRQ returns the IRQ number in NVIC associated to the peripheral.
+func IRQ() rtos.IRQ {
+	return r().IRQ()
 }

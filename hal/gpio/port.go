@@ -11,7 +11,7 @@ import (
 	"github.com/embeddedgo/nrf5/hal/internal/mmap"
 )
 
-// Port represents one GPIO port.
+// Port represents a GPIO port.
 type Port struct {
 	_          mmio.U32
 	out        mmio.U32
@@ -27,16 +27,20 @@ type Port struct {
 	pincnf     [32]mmio.U32
 }
 
+func portaddr(n int) uintptr {
+	return mmap.AHB_BASE + 0x500 + uintptr(n)*0x300
+}
+
 // P returns n-th GPIO port
 func P(n int) *Port {
 	if uint(n) > 1 {
 		return nil
 	}
-	return (*Port)(unsafe.Pointer(mmap.AHB_BASE + 0x500 + uintptr(n)*0x300))
+	return (*Port)(unsafe.Pointer(portaddr(n)))
 }
 
-// Index returns the port number.
-func (p *Port) Index() int {
+// Num returns the port number.
+func (p *Port) Num() int {
 	return int(uintptr(unsafe.Pointer(p))-mmap.AHB_BASE-0x500) / 0x300
 }
 
@@ -84,5 +88,5 @@ func (p *Port) Pin(n int) Pin {
 		panic("gpio: bad pin")
 	}
 	ptr := uintptr(unsafe.Pointer(p))
-	return Pin{ptr | uintptr(p.Index())<<5 | uintptr(n)}
+	return Pin{ptr | uintptr(p.Num())<<5 | uintptr(n)}
 }

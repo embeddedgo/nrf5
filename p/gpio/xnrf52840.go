@@ -26,12 +26,12 @@ type Periph struct {
 	PIN_CNF    [32]RPIN_CNF
 }
 
+func P0() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.P0_BASE))) }
+func P1() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.P1_BASE))) }
+
 func (p *Periph) BaseAddr() uintptr {
 	return uintptr(unsafe.Pointer(p))
 }
-
-func P0() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.P0_BASE))) }
-func P1() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.P1_BASE))) }
 
 type OUT uint32
 
@@ -203,10 +203,18 @@ func (p *Periph) DIRECTION(n int) RMPIN_CNF {
 	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DIRECTION)}}
 }
 
-func (p *Periph) INPUT(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(INPUT)}} }
+func (p *Periph) INPUT(n int) RMPIN_CNF {
+	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(INPUT)}}
+}
 
-func (p *Periph) PULL(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(PULL)}} }
+func (p *Periph) PULL(n int) RMPIN_CNF {
+	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(PULL)}}
+}
 
-func (p *Periph) DRIVE(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DRIVE)}} }
+func (p *Periph) DRIVE(n int) RMPIN_CNF {
+	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(DRIVE)}}
+}
 
-func (p *Periph) SENSE(n int) RMPIN_CNF { return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(SENSE)}} }
+func (p *Periph) SENSE(n int) RMPIN_CNF {
+	return RMPIN_CNF{mmio.UM32{&p.PIN_CNF[n].U32, uint32(SENSE)}}
+}

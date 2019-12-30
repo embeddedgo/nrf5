@@ -50,11 +50,11 @@ type Periph struct {
 	CONFIG       RCONFIG
 }
 
+func UART0() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.UART0_BASE))) }
+
 func (p *Periph) BaseAddr() uintptr {
 	return uintptr(unsafe.Pointer(p))
 }
-
-func UART0() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.UART0_BASE))) }
 
 type TASK_STARTRX uint32
 
@@ -330,13 +330,17 @@ func (p *Periph) EOVERRUN() RMERRORSRC {
 	return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EOVERRUN)}}
 }
 
-func (p *Periph) EPARITY() RMERRORSRC { return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EPARITY)}} }
+func (p *Periph) EPARITY() RMERRORSRC {
+	return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EPARITY)}}
+}
 
 func (p *Periph) EFRAMING() RMERRORSRC {
 	return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EFRAMING)}}
 }
 
-func (p *Periph) EBREAK() RMERRORSRC { return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EBREAK)}} }
+func (p *Periph) EBREAK() RMERRORSRC {
+	return RMERRORSRC{mmio.UM32{&p.ERRORSRC.U32, uint32(EBREAK)}}
+}
 
 type ENABLE uint32
 
@@ -354,7 +358,9 @@ type RMENABLE struct{ mmio.UM32 }
 func (rm RMENABLE) Load() ENABLE   { return ENABLE(rm.UM32.Load()) }
 func (rm RMENABLE) Store(b ENABLE) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) EN() RMENABLE { return RMENABLE{mmio.UM32{&p.ENABLE.U32, uint32(EN)}} }
+func (p *Periph) EN() RMENABLE {
+	return RMENABLE{mmio.UM32{&p.ENABLE.U32, uint32(EN)}}
+}
 
 type PSEL_RTS uint32
 
@@ -468,7 +474,9 @@ type RMBAUDRATE struct{ mmio.UM32 }
 func (rm RMBAUDRATE) Load() BAUDRATE   { return BAUDRATE(rm.UM32.Load()) }
 func (rm RMBAUDRATE) Store(b BAUDRATE) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) BR() RMBAUDRATE { return RMBAUDRATE{mmio.UM32{&p.BAUDRATE.U32, uint32(BR)}} }
+func (p *Periph) BR() RMBAUDRATE {
+	return RMBAUDRATE{mmio.UM32{&p.BAUDRATE.U32, uint32(BR)}}
+}
 
 type CONFIG uint32
 
@@ -486,8 +494,14 @@ type RMCONFIG struct{ mmio.UM32 }
 func (rm RMCONFIG) Load() CONFIG   { return CONFIG(rm.UM32.Load()) }
 func (rm RMCONFIG) Store(b CONFIG) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) HWFC() RMCONFIG { return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(HWFC)}} }
+func (p *Periph) HWFC() RMCONFIG {
+	return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(HWFC)}}
+}
 
-func (p *Periph) PARITY() RMCONFIG { return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(PARITY)}} }
+func (p *Periph) PARITY() RMCONFIG {
+	return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(PARITY)}}
+}
 
-func (p *Periph) STOP() RMCONFIG { return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(STOP)}} }
+func (p *Periph) STOP() RMCONFIG {
+	return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(STOP)}}
+}

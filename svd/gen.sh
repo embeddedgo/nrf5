@@ -1,28 +1,27 @@
 #!/bin/sh
 
-#set -e
+set -e
 
-cd ../../../embeddedgo/nrf5/p
+cd ../../../embeddedgo/nrf5/hal
+hal=$(pwd)
+cd ../p
 rm -rf *
 
 svdxgen github.com/embeddedgo/nrf5/p ../svd/*.svd
 
-for p in ficr gpio nvmc uart uicr; do
+for p in ficr gpio nvmc rtc spi uart uicr; do
 	cd $p
 	xgen *.go
 	GOOS=noos GOARCH=thumb go build -tags nrf52840
 	cd ..
 done
 
-rm -f ../hal/irq/*
+perlscript='
+s/package irq/$&\n\nimport "embedded\/rtos"/;
+s/ = \d/ rtos.IRQ$&/g;
+'
 
-awkscript='{
-	gsub("package irq", "package irq\n\nimport \"embedded/rtos\"", $0)
-	gsub(" = ", " rtos.IRQ = ", $0)
-	print
-}'
-cd irq
-for f in *; do
-	awk "$awkscript" $f >../../hal/irq/$f
-done
-
+cd $hal/irq
+rm -f *
+cp ../../p/irq/* .
+perl -pi -e "$perlscript" *.go

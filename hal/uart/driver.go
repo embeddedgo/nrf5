@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build ignore
+
 package uart
 
 import (
@@ -19,12 +21,11 @@ const (
 func (e DriverError) Error() string {
 	switch e {
 	case ErrBufOverflow:
-		return "buffer overflow"
+		return "uart: buffer overflow"
 	case ErrTimeout:
-		return "timeout"
-	default:
-		return ""
+		return "uart: timeout"
 	}
+	return ""
 }
 
 // Driver is interrupt based driver to UART peripheral.
@@ -44,9 +45,8 @@ type Driver struct {
 	txdone rtos.Note
 }
 
-// NewDriver provides convenient way to create heap allocated Driver.
 func NewDriver(p *Periph, rxbuf []byte) *Driver {
-	return &Driver{deadlineRx: -1, deadlineTx: -1, P: p, rxbuf: rxbuf}
+	return &Driver{timeoutRx: -1, timeoutTx: -1, P: p, rxbuf: rxbuf}
 }
 
 func (d *Driver) Enable() {
@@ -57,8 +57,7 @@ func (d *Driver) Disable() {
 	d.P.StoreENABLE(false)
 }
 
-// EnableRx enables UART receiver. EnableRx must be called before any of Read*
-// methods.
+// EnableRx enables UART receiver.
 func (d *Driver) EnableRx() {
 	p := d.P
 	p.Event(RXDRDY).Clear()
@@ -75,8 +74,7 @@ func (d *Driver) DisableRx() {
 	p.DisableIRQ(1<<ERROR | 1<<RXDRDY)
 }
 
-// EnableTx enables UART transmitter. EnableTx must be called before any of
-// Write* methods.
+// EnableTx enables UART transmitter.
 func (d *Driver) EnableTx() {
 	p := d.P
 	p.Event(TXDRDY).Clear()
@@ -91,56 +89,55 @@ func (d *Driver) DisableTx() {
 	p.Event(TXDRDY).DisableIRQ()
 }
 
-func (d *Driver) SetReadDeadline(t int64) {
-	d.deadlineRx = t
+func (d *Driver) SetReadTimeout(ns int64) {
+	d.timeoutRx = ns
 }
 
-func (d *Driver) SetWriteDeadline(t int64) {
-	d.deadlineTx = t
+func (d *Driver) SetWriteTimeout(ns int64) {
+	d.timeoutTx = ns
 }
 
 // ISR should be used as UART interrupt handler.
 func (d *Driver) ISR() {
 	p := d.P
 	for {
-		again := false
+		nothing := true
 		if p.Event(RXDRDY).IsSet() {
 			p.Event(RXDRDY).Clear()
-			b := p.LoadRXD() // Always read RXD to do not block RXDRDY event.
+			b := p.LoadRXD()
 			nextpi := d.pi + 1
 			if nextpi == len(d.rxbuf) {
 				nextpi = 0
 			}
 			if d.pr == nextpi {
-				atomic.OrUint32(&d.err, uint32(ErrBufOverflow)<<8)
+				d.err |= uint32(ErrBufOverflow) << 8
 			} else {
 				d.rxbuf[d.pi] = b
 				d.pi = nextpi
 			}
-			again = true
+			nothing = false
 		}
 		if p.Event(ERROR).IsSet() {
 			p.Event(ERROR).Clear()
 			err := p.LoadERRORSRC()
 			p.ClearERRORSRC(err)
-			atomic.OrUint32(&d.err, uint32(err))
-			again = true
+			d.err |= uint32(err)
+			nothing = false
 		}
-		if again {
+		if !nothing {
 			d.rxready.Wakeup()
 		}
 		if p.Event(TXDRDY).IsSet() {
 			p.Event(TXDRDY).Clear()
 			d.txn++
-			if uint(d.txn) < uint(len(d.txdata)) {
-				// Uints above allow compiler to optimize bounds checking below.
+			if d.txn < len(d.txdata) {
 				p.StoreTXD(d.txdata[d.txn])
-				again = true
+				nothing = false
 			} else {
 				d.txdone.Wakeup()
 			}
 		}
-		if !again {
+		if nothing {
 			break
 		}
 	}
@@ -155,7 +152,7 @@ func (d *Driver) Len() int {
 	return n
 }
 
-func (d *Driver) clearError() error {
+func (d *Driver) atomicClearError() error {
 	err := atomic.SwapUint32(&d.err, 0)
 	if pe := Error(err); pe != 0 {
 		return pe
@@ -163,37 +160,24 @@ func (d *Driver) clearError() error {
 	return DriverError(err >> 8)
 }
 
-// ReadByte reads one byte from the internal buffer. ReadByte can block only if
-// the internal buffer is empty.
+// ReadByte reads one byte from the internal buffer.
 func (d *Driver) ReadByte() (b byte, err error) {
-	event := d.rxready
-	if d.deadlineRx != 0 {
-		event |= syscall.Alarm
-	}
 	for {
-		if atomic.LoadUint32(&d.err) != 0 {
-			err = d.clearError()
+		if d.err != 0 {
+			err = d.atomicClearError()
 		}
 		if pr := d.pr; atomic.LoadInt(&d.pi) != pr {
-			fence.R_SMP() // Control dep. between load(d.pi) and load(d.rxbuf).
 			b = d.rxbuf[pr]
 			if pr++; pr == len(d.rxbuf) {
 				pr = 0
 			}
-			fence.RW_SMP() // Ensure load(d.rxbuf) finished before store(d.pr).
-			atomic.StoreInt(&d.pr, pr)
+			atomic.StoreInt(&d.pr, pr) // ensure pr is updated after read rxbuf
 			return
 		}
 		if err != nil {
 			return
 		}
-		if dl := d.deadlineRx; dl != 0 {
-			if syscall.Nanosec() >= dl {
-				return 0, ErrTimeout
-			}
-			syscall.SetAlarm(dl)
-		}
-		event.Wait()
+		d..Wait()
 	}
 }
 

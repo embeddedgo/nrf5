@@ -1,14 +1,19 @@
+// Copyright 2019 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package spi provides access to the registers of SPI peripheral.
+// It also provides the driver that implements asynchronous and synchronous I/O.
 package spi
 
 import (
-	"bits"
-	"mmio"
+	"embedded/mmio"
 	"unsafe"
 
-	"nrf5/hal/gpio"
-	"nrf5/hal/te"
-
-	"nrf5/hal/internal/mmap"
+	"github.com/embeddedgo/nrf5/hal/gpio"
+	"github.com/embeddedgo/nrf5/hal/internal"
+	"github.com/embeddedgo/nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/p/mmap"
 )
 
 type Periph struct {
@@ -27,15 +32,23 @@ type Periph struct {
 	config    mmio.U32
 }
 
-//emgo:const
-var (
-	SPI0 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x03000))
-	SPI1 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x04000))
-)
+func SPI(n int) *Periph {
+	switch n {
+	case 0:
+		return (*Periph)(unsafe.Pointer(mmap.SPI0_BASE))
+	case 1:
+		return (*Periph)(unsafe.Pointer(mmap.SPI1_BASE))
+	case 2:
+		return (*Periph)(unsafe.Pointer(mmap.SPI2_BASE))
+	}
+	return nil
+}
 
 type Event byte
 
-const READY Event = 2 // TXD byte sent and RXD byte received.
+const (
+	READY Event = 2 // TXD byte sent and RXD byte received.
+)
 
 func (p *Periph) Event(e Event) *te.Event { return p.Regs.Event(int(e)) }
 
@@ -46,7 +59,7 @@ func (p *Periph) LoadENABLE() bool {
 
 // StoreENABLE enables or disables SPI peripheral.
 func (p *Periph) StoreENABLE(en bool) {
-	p.enable.Store(uint32(bits.One(en)))
+	p.enable.Store(internal.Bool2uint32(en))
 }
 
 type Signal byte
@@ -57,17 +70,22 @@ const (
 	MISO Signal = 2
 )
 
-func (p *Periph) LoadPSEL(s Signal) gpio.Pin {
-	return gpio.SelPin(int8(p.psel[s].Load()))
-}
-func (p *Periph) StorePSEL(s Signal, pin gpio.Pin) {
-	p.psel[s].Store(uint32(pin.Sel()))
+// LoadPSEL returns configuration of signal s.
+func (p *Periph) LoadPSEL(s Signal) (pin gpio.Pin, connected bool) {
+	return p.psel[s].Pin()
 }
 
+// StorePSEL configures signal s.
+func (p *Periph) StorePSEL(s Signal, pin gpio.Pin, connected bool) {
+	p.psel[s].SetPin(pin, connected)
+}
+
+// LoadRX returns data received (double buffered).
 func (p *Periph) LoadRXD() byte {
 	return byte(p.rxd.Load())
 }
 
+// StoreTXD stores data to send (double buffered).
 func (p *Periph) StoreTXD(b byte) {
 	p.txd.Store(uint32(b))
 }

@@ -32,11 +32,11 @@ type Periph struct {
 	IMISS               RIMISS
 }
 
+func NVMC() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.NVMC_BASE))) }
+
 func (p *Periph) BaseAddr() uintptr {
 	return uintptr(unsafe.Pointer(p))
 }
-
-func NVMC() *Periph { return (*Periph)(unsafe.Pointer(uintptr(mmap.NVMC_BASE))) }
 
 type READY uint32
 
@@ -88,7 +88,9 @@ type RMCONFIG struct{ mmio.UM32 }
 func (rm RMCONFIG) Load() CONFIG   { return CONFIG(rm.UM32.Load()) }
 func (rm RMCONFIG) Store(b CONFIG) { rm.UM32.Store(uint32(b)) }
 
-func (p *Periph) WEN() RMCONFIG { return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(WEN)}} }
+func (p *Periph) WEN() RMCONFIG {
+	return RMCONFIG{mmio.UM32{&p.CONFIG.U32, uint32(WEN)}}
+}
 
 type ERASEPAGE uint32
 

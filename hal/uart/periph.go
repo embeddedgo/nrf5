@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package uart provides access to the registers of UART peripheral.
+// It also provides the driver that implements io.ReadWriter interface.
 package uart
 
 import (
@@ -9,19 +11,21 @@ import (
 	"unsafe"
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
-	"github.com/embeddedgo/nrf5/hal/internal/mmap"
+	"github.com/embeddedgo/nrf5/hal/internal"
+	"github.com/embeddedgo/nrf5/hal/internal/signal"
 	"github.com/embeddedgo/nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/p/mmap"
 )
 
 type Periph struct {
 	te.Regs
 
-	_        [32]mmio.U32
+	_        [32]uint32
 	errorsrc mmio.U32
-	_        [31]mmio.U32
+	_        [31]uint32
 	enable   mmio.U32
-	_        mmio.U32
-	psel     [4]mmio.U32
+	_        uint32
+	psel     [4]signal.Digital
 	rxd      mmio.U32
 	txd      mmio.U32
 	_        mmio.U32
@@ -34,10 +38,10 @@ func UART(n int) *Periph {
 	if n != 0 {
 		return nil
 	}
-	return (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x02000))
+	return (*Periph)(unsafe.Pointer(mmap.UART0_BASE))
 }
 
-type Task byte
+type Task uint8
 
 const (
 	STARTRX Task = 0 // Start UART receiver.
@@ -47,7 +51,7 @@ const (
 	SUSPEND Task = 7 // Suspend UART. nRF52.
 )
 
-type Event byte
+type Event uint8
 
 const (
 	CTS    Event = 0  // CTS is activated (set low). nRF51v3+.
@@ -71,8 +75,8 @@ const (
 func (p *Periph) LoadSHORTS() Shorts   { return Shorts(p.Regs.LoadSHORTS()) }
 func (p *Periph) StoreSHORTS(s Shorts) { p.Regs.StoreSHORTS(uint32(s)) }
 
-// Error is a bitfield that describes detected errors.
-type Error byte
+// Error is a bitmask that lists detected errors.
+type Error uint8
 
 const (
 	ErrOverrun Error = 1 << 0
@@ -83,28 +87,21 @@ const (
 )
 
 func (e Error) Error() string {
-	var (
-		s string
-		d Error
-	)
-	switch {
-	case e&ErrOverrun != 0:
-		d = ErrOverrun
-		s = "UART overrun+"
-	case e&ErrFraming != 0:
-		d = ErrFraming
-		s = "UART framing+"
-	case e&ErrParity != 0:
-		d = ErrParity
-		s = "UART parity+"
-	case e&ErrBreak != 0:
-		d = ErrBreak
-		s = "UART break+"
-	default:
+	if e == 0 {
 		return ""
 	}
-	if e&^d == 0 {
-		s = s[:len(s)-1]
+	s := "uart:"
+	if e&ErrOverrun != 0 {
+		s += " overrun"
+	}
+	if e&ErrParity != 0 {
+		s += " parity"
+	}
+	if e&ErrFraming != 0 {
+		s += " framing"
+	}
+	if e&ErrBreak != 0 {
+		s += " break"
 	}
 	return s
 }
@@ -126,29 +123,34 @@ func (p *Periph) LoadENABLE() bool {
 
 // StoreENABLE enables or disables UART peripheral.
 func (p *Periph) StoreENABLE(en bool) {
-	p.enable.Store(uint32(bits.One(en)) << 2)
+	p.enable.Store(4 * internal.Bool2uint32(en))
 }
 
 type Signal byte
 
 const (
-	RTSn Signal = 0
-	TXD  Signal = 1
-	CTSn Signal = 2
-	RXD  Signal = 3
+	RTS Signal = 0
+	TXD Signal = 1
+	CTS Signal = 2
+	RXD Signal = 3
 )
 
-func (p *Periph) LoadPSEL(s Signal) gpio.Pin {
-	return gpio.SelPin(int8(p.psel[s].Load()))
-}
-func (p *Periph) StorePSEL(s Signal, pin gpio.Pin) {
-	p.psel[s].Store(uint32(pin.Sel()))
+// LoadPSEL returns configuration of signal s.
+func (p *Periph) LoadPSEL(s Signal) (pin gpio.Pin, connected bool) {
+	return p.psel[s].Pin()
 }
 
+// StorePSEL configures signal s.
+func (p *Periph) StorePSEL(s Signal, pin gpio.Pin, connected bool) {
+	p.psel[s].SetPin(pin, connected)
+}
+
+// LoadRXD returns data received in previous transfers.
 func (p *Periph) LoadRXD() byte {
 	return byte(p.rxd.Load())
 }
 
+// StoreTX stores data to be transferred.
 func (p *Periph) StoreTXD(b byte) {
 	p.txd.Store(uint32(b))
 }
@@ -202,7 +204,7 @@ const (
 )
 
 // LoadCONFIG returns configuration. nRF52.
-func (p *Periph) LoadCONFIG() Baudrate {
+func (p *Periph) LoadCONFIG() Config {
 	return Config(p.config.Load())
 }
 
