@@ -256,10 +256,10 @@ func (d *Driver) waitRxData() (lastr, lastw uint32) {
 }
 
 func (d *Driver) markDataRead(lastr uint32) error {
-	var lastw uint32
+	var lastrw uint32
 	for {
-		lastrw := atomic.LoadUint32(&d.lastrw)
-		lastw = lastrw & 0xFFFF
+		lastrw = atomic.LoadUint32(&d.lastrw)
+		lastw := lastrw & 0xFFFF
 		if lastw == lastr {
 			d.rxready.Clear()
 		}
@@ -267,7 +267,11 @@ func (d *Driver) markDataRead(lastr uint32) error {
 			break
 		}
 	}
-	if n := int(lastr) - int(lastw); n == 1 || len(d.rxbuf)+n == 1 {
+	n := int(lastrw>>16) - int(lastrw&0xFFFF)
+	if n < 0 {
+		n += len(d.rxbuf)
+	}
+	if n == 1 {
 		return ErrBufOverflow
 	}
 	if e := d.P.LoadERRORSRC(); e != 0 {
