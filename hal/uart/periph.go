@@ -12,7 +12,6 @@ import (
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/internal"
-	"github.com/embeddedgo/nrf5/hal/internal/signal"
 	"github.com/embeddedgo/nrf5/hal/te"
 	"github.com/embeddedgo/nrf5/p/mmap"
 )
@@ -25,7 +24,7 @@ type Periph struct {
 	_        [31]uint32
 	enable   mmio.U32
 	_        uint32
-	psel     [4]signal.Digital
+	psel     [4]mmio.U32
 	rxd      mmio.U32
 	txd      mmio.U32
 	_        mmio.U32
@@ -75,44 +74,45 @@ const (
 func (p *Periph) LoadSHORTS() Shorts   { return Shorts(p.Regs.LoadSHORTS()) }
 func (p *Periph) StoreSHORTS(s Shorts) { p.Regs.StoreSHORTS(uint32(s)) }
 
-// Error is a bitmask that lists detected errors.
-type Error uint8
+// ErrorBits is a bitfield that lists detected errors.
+type ErrorBits uint8
 
 const (
-	ErrOverrun Error = 1 << 0
-	ErrParity  Error = 1 << 1
-	ErrFraming Error = 1 << 2
-	ErrBreak   Error = 1 << 3
-	ErrAll           = ErrOverrun | ErrParity | ErrFraming | ErrBreak
+	EOVERRUN ErrorBits = 1 << 0
+	EPARITY  ErrorBits = 1 << 1
+	EFRAMING ErrorBits = 1 << 2
+	EBREAK   ErrorBits = 1 << 3
+
+	EALL = EOVERRUN | EPARITY | EFRAMING | EBREAK
 )
 
-func (e Error) Error() string {
+func (e ErrorBits) Error() string {
 	if e == 0 {
 		return ""
 	}
 	s := "uart:"
-	if e&ErrOverrun != 0 {
+	if e&EOVERRUN != 0 {
 		s += " overrun"
 	}
-	if e&ErrParity != 0 {
+	if e&EPARITY != 0 {
 		s += " parity"
 	}
-	if e&ErrFraming != 0 {
+	if e&EFRAMING != 0 {
 		s += " framing"
 	}
-	if e&ErrBreak != 0 {
+	if e&EBREAK != 0 {
 		s += " break"
 	}
 	return s
 }
 
 // LoadERRORSRC returns error flags.
-func (p *Periph) LoadERRORSRC() Error {
-	return Error(p.errorsrc.Load())
+func (p *Periph) LoadERRORSRC() ErrorBits {
+	return ErrorBits(p.errorsrc.Load())
 }
 
 // ClearERRORSRC clears specfied error flags.
-func (p *Periph) ClearERRORSRC(e Error) {
+func (p *Periph) ClearERRORSRC(e ErrorBits) {
 	p.errorsrc.Store(uint32(e))
 }
 
@@ -129,20 +129,20 @@ func (p *Periph) StoreENABLE(en bool) {
 type Signal byte
 
 const (
-	RTS Signal = 0
-	TXD Signal = 1
-	CTS Signal = 2
-	RXD Signal = 3
+	RTSn Signal = 0
+	TXD  Signal = 1
+	CTSn Signal = 2
+	RXD  Signal = 3
 )
 
 // LoadPSEL returns configuration of signal s.
-func (p *Periph) LoadPSEL(s Signal) (pin gpio.Pin, connected bool) {
-	return p.psel[s].Pin()
+func (p *Periph) LoadPSEL(s Signal) gpio.PSEL {
+	return gpio.PSEL(p.psel[s].Load())
 }
 
 // StorePSEL configures signal s.
-func (p *Periph) StorePSEL(s Signal, pin gpio.Pin, connected bool) {
-	p.psel[s].SetPin(pin, connected)
+func (p *Periph) StorePSEL(s Signal, ps gpio.PSEL) {
+	p.psel[s].Store(uint32(ps))
 }
 
 // LoadRXD returns data received in previous transfers.

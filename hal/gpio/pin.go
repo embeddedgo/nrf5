@@ -23,10 +23,10 @@ func (p Pin) Port() *Port {
 	return (*Port)(unsafe.Pointer(p.h &^ 0x7F))
 }
 
-// PSEL returns the numerical representation of digital Pin.
+// PSEL returns the PSEL representation of GPIO pin in connected state.
 func (p Pin) PSEL() PSEL {
 	if p.h == 0 {
-		return -1
+		return 0xFFFFFFFF
 	}
 	return PSEL(p.h & 0x7F)
 }
@@ -88,10 +88,24 @@ func (p Pin) Store(val int) {
 	}
 }
 
-// PSEL is numerical representation of GPIO pin.
-type PSEL int8
+// PSEL is numerical representation of GPIO pin used as peripheral digital
+// signal. It can have two states: connected or disconnected to the peripheral.
+type PSEL uint32
 
-// Pin returns the GPIO pin used for digital signal that corresponds to psel.
+// IsConnected reports the connection state of ps.
+func (ps PSEL) IsConnected() bool {
+	return ps>>31 != 0
+}
+
+// Connected returns ps with connection state changed.
+func (ps PSEL) Connected(connected bool) PSEL {
+	if connected {
+		return ps &^ 1 << 31
+	}
+	return ps | 1<<31
+}
+
+// Pin returns the GPIO pin corresponding to ps.
 func (ps PSEL) Pin() Pin {
 	if ps < 0 {
 		return Pin{}
