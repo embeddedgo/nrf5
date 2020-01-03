@@ -16,36 +16,36 @@ import (
 // error free links (it is fast and efficient but has some limitations when it
 // comes to reporting Rx errors).
 //
-// Reading from UART can cause hardware errors (there is no hardware error
-// detection on writing). This driver treats all Rx hardware errors as
-// asynchronous events (at least the ErrOverrun is in fact synchronous) so they
-// are simply imformative about the connection quallity and reading performance
-// but you can not determine which data has been affected by error (use other
-// techniques to ensure data integrity).
+// Reading from UART you may encounter errors detected by the hardware (there is
+// no hardware error detection on writing). This driver treats all Rx hardware
+// errors as asynchronous events but at least the ErrOverrun is in fact
+// synchronous. So the Rx errors other than ErrTimeout are simply imformative
+// about the connection quallity or the reading performance. You can not
+// determine which data has been affected by such error (use other techniques to
+// ensure data integrity.
 //
 // Set the read timeout to ensure wake-up in case of missing data. The hardware
 // may not detect some Rx errors or the error can be signaled before you try to
-// read affected data because of the internal hardware and software buffering.
-// This means that the reader can not rely on waking up in case of Rx error.
-// Consider also that the remote party can reset unexpectedly and depending on
-// the protocol it can wait for a data request or an initialization sequence
-// before sending anything.
+// read affected data because of the hardware and software buffering. This means
+// that the reader can not rely on waking up in case of Rx error. Consider also
+// that the remote party can reset unexpectedly and depending on the protocol
+// used it can be quiet waiting for data request or initialization sequence.
 //
 // The write operation can block only if the hardware flow control is enabled.
 // In this case you can use write timeout to detect problems with the remote
 // party or RTS/CTS signaling.
 //
 // The driver does not support concurent reading or writing by multiple
-// gorutines. There can be one reading goroutine and one writing goroutine at
-// the same time. Both can work concurrently with the driver interrupt handler
-// (parallel execution on multi-core systems is supported).
+// gorutines. It supports one reading goroutine and one writing goroutine that
+// both can work concurrently with the driver.
 type Driver struct {
 	P *Periph
 
 	// rx state
-	rxbuf   []byte
-	lastrw  uint32
-	rxready rtos.Note
+	rxbuf    []byte
+	lastrw   uint32
+	rxready  rtos.Note
+	overflow bool
 
 	// tx state
 	txdata string
@@ -58,14 +58,12 @@ type Driver struct {
 
 // NewDriver returns a new driver for p. The rxbuf can be nil in case of Tx-only
 // use case. Otherwise at least 2-byte buffer is required because one byte
-// remains unused for efficient checking of an empty state. Reading from 2-byte
-// buffer always returns ErrBufOverflow because for performance reasons full
-// rxbuf is treated as overflowed. At least 8-byte buffer is recommended to
-// ensure the full 6-byte hardware buffer can be copied to the empty rxbuf and
-// there is still one byte left to avoid ErrBufOverflow error. Please note that
-// 1 Mbaud means 100 bytes in millisecond. In case of 2 ms scheduling period and
-// another busy thread at least 202-byte buffer is need to have a chance to
-// avoid overflows. The driver can use up to 65536 bytes for its Rx buffer.
+// remains unused for efficient checking of an empty state. At least 8-byte
+// buffer is recommended because there is 6-byte hardware buffer and the
+// ISR reads from it until it is empty and drops read bytes if the software
+// buffer is full. In case of 1 Mbaud speed n*256 byte buffer is recomended
+// where n is the number o other busy threads. The driver can use up to 65536
+// bytes for its Rx buffer.
 func NewDriver(p *Periph, rxbuf []byte) *Driver {
 	if len(rxbuf) > 65536 {
 		rxbuf = rxbuf[:65536]
@@ -140,7 +138,7 @@ func (d *Driver) ISR() {
 tryAgain:
 	rxwakeup := false
 	txwakeup := false
-	active := false
+	pollmore := false
 
 	// send next byte if the previous one was sent (little work so do it first)
 	if p.Event(TXDRDY).IsSet() {
@@ -148,7 +146,7 @@ tryAgain:
 		if n := d.txn + 1; n < len(d.txdata) {
 			d.txn = n
 			p.StoreTXD(d.txdata[n])
-			active = true
+			pollmore = true
 		} else {
 			// txdone.Wakeup takes a lot of time so defer it after receive
 			txwakeup = true
@@ -157,15 +155,12 @@ tryAgain:
 
 	// Empty the hardware buffer even if there is no space in rxbuf. It
 	// simplifies and speeds up the receiving code and makes it possible to
-	// distinguish between the hardware buffer overrun error (interrupt latency
-	// is too high) and the software buffer overlow error (the reading goroutine
-	// is too slow).
+	// distinguish between the hardware buffer overrun (interrupt latency too
+	// high) and the software buffer overlow (the reading goroutine too slow).
 	if rxrdy := p.Event(RXDRDY).IsSet(); rxrdy {
-		active = true
-	checkRxbuf:
 		lastrw := atomic.LoadUint32(&d.lastrw)
 		lastr, lastw := lastrw>>16, lastrw&0xFFFF
-		rxwakeup = (lastr == lastw) // gorutine can sleep on empty rxbuf
+		rxwakeup = (lastr == lastw) // reader can sleep on empty rxbuf
 		for rxrdy {
 			p.Event(RXDRDY).Clear()
 			b := p.LoadRXD()
@@ -176,12 +171,18 @@ tryAgain:
 			if nextw != lastr {
 				d.rxbuf[nextw] = b
 				lastw = nextw
+			} else {
+				d.overflow = true
 			}
 			rxrdy = p.Event(RXDRDY).IsSet()
 		}
-		if !atomic.CompareAndSwapUint32(&d.lastrw, lastrw, lastr<<16|lastw) {
-			goto checkRxbuf // in the meantime the rxbuf was read
+		for !atomic.CompareAndSwapUint32(&d.lastrw, lastrw, lastr<<16|lastw) {
+			// in the meantime the rxbuf was read
+			lastrw = atomic.LoadUint32(&d.lastrw)
+			lastr = lastrw >> 16
+			rxwakeup = (lastr == lastrw&0xFFFF)
 		}
+		pollmore = true
 	}
 
 	if txwakeup {
@@ -190,8 +191,9 @@ tryAgain:
 	if rxwakeup {
 		d.rxready.Wakeup()
 	}
-	if active {
-		// avoid expensive Go ISR exit/enter code in case of high baudrates
+	if pollmore {
+		// Avoid expensive Go ISR exit/enter code in case of high baudrates.
+		// In case of nRF52+mbr+softdevice(off) useful for baudrates >= 921600.
 		goto tryAgain
 	}
 }
@@ -256,9 +258,8 @@ func (d *Driver) waitRxData() (lastr, lastw uint32) {
 }
 
 func (d *Driver) markDataRead(lastr uint32) error {
-	var lastrw uint32
 	for {
-		lastrw = atomic.LoadUint32(&d.lastrw)
+		lastrw := atomic.LoadUint32(&d.lastrw)
 		lastw := lastrw & 0xFFFF
 		if lastw == lastr {
 			d.rxready.Clear()
@@ -267,11 +268,8 @@ func (d *Driver) markDataRead(lastr uint32) error {
 			break
 		}
 	}
-	n := int(lastrw>>16) - int(lastrw&0xFFFF)
-	if n < 0 {
-		n += len(d.rxbuf)
-	}
-	if n == 1 {
+	if d.overflow {
+		d.overflow = false
 		return ErrBufOverflow
 	}
 	if e := d.P.LoadERRORSRC(); e != 0 {
