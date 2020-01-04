@@ -6,6 +6,7 @@ package uart
 
 import (
 	"embedded/rtos"
+	"runtime"
 	"sync/atomic"
 	"unsafe"
 
@@ -38,7 +39,7 @@ import (
 // The driver supports one reading goroutine and one writing goroutine that both
 // can work concurrently with the driver.
 type Driver struct {
-	P *Periph
+	p *Periph
 
 	// rx state
 	rxbuf    []byte
@@ -55,82 +56,112 @@ type Driver struct {
 	timeoutTx int64
 }
 
-// NewDriver returns a new driver for p. The rxbuf can be nil in case of Tx-only
-// use case. Otherwise at least 2-byte buffer is required because one byte
-// remains unused for efficient checking of an empty state. At least 8-byte
-// buffer is recommended because there is 6-byte buffer hardware. The ISR do not
-// return until read all bytes from hardware buffer. If the software buffer is
-// full it simply drops read bytes until there is no more bytes to read from
-// hardware. The driver can not use more than 65536 bytes for its Rx buffer.
-func NewDriver(p *Periph, rxbuf []byte) *Driver {
-	if len(rxbuf) > 65536 {
-		rxbuf = rxbuf[:65536]
-	}
-	return &Driver{timeoutRx: -1, timeoutTx: -1, P: p, rxbuf: rxbuf}
+// NewDriver returns a new driver for p.
+func NewDriver(p *Periph) *Driver {
+	return &Driver{timeoutRx: -1, timeoutTx: -1, p: p}
+}
+
+func (d *Driver) Periph() *Periph {
+	return d.p
 }
 
 // Enable enables UART peripheral.
 func (d *Driver) Enable() {
-	d.P.StoreENABLE(true)
+	d.p.StoreENABLE(true)
 }
 
 // Disable disables UART peripheral.
 func (d *Driver) Disable() {
-	d.P.StoreENABLE(false)
+	d.p.StoreENABLE(false)
 }
 
-// EnableRx enables UART receiver.
-func (d *Driver) EnableRx() {
-	if len(d.rxbuf) < 2 {
+// EnableRx enables the UART receiver using the provided slice to buffer
+// received data. At least 2-byte buffer is required, which is effectively one
+// byte buffer because the other byte always remains unused for efficient
+// checking of an empty state. You can not rely on 6-byte hardware buffer as
+// extension of software buffer because for performance reasons the ISR do not
+// return until it reads all bytes from hardware. If the software buffer is full
+// the ISR simply drops read bytes until there is no more data to read. The
+// driver uses at most 65536 bytes of rxbuf. EnableRx panics if the receiving is
+// already enabled or rxbuf is too short.
+func (d *Driver) EnableRx(rxbuf []byte) {
+	if d.rxbuf != nil {
+		panic("enabled before")
+	}
+	if len(rxbuf) < 2 {
 		panic("rxbuf too short")
 	}
-	p := d.P
+	if len(rxbuf) > 65536 {
+		rxbuf = rxbuf[:65536]
+	}
+	d.rxbuf = rxbuf
+	d.lastrw = 0
+	p := d.p
 	p.Event(RXDRDY).EnableIRQ()
 	p.Task(STARTRX).Trigger()
 }
 
-// DisableRx disables UART receiver.
-func (d *Driver) DisableRx() {
-	d.P.Task(STOPRX).Trigger()
+// DisableRx disables the UART receiver. The receive buffer is returned and no
+// longer used by driver allowing GC to collect its memory. You can use the
+// STOPRX and STARTRX tasks directly if you want to temporary disable the
+// receiver leaving the driver intact. 
+func (d *Driver) DisableRx() (rxbuf []byte) {
+	p := d.p
+	rxto := p.Event(RXTO)
+	rxto.Clear()
+	p.Task(STOPRX).Trigger()
+	for !rxto.IsSet() {
+		runtime.Gosched()
+	}
+	rxbuf = d.rxbuf
+	d.rxbuf = nil
+	return
 }
 
 // EnableTx enables UART transmitter.
 func (d *Driver) EnableTx() {
-	p := d.P
+	p := d.p
 	p.Event(TXDRDY).EnableIRQ()
 	p.Task(STARTTX).Trigger()
 }
 
 // DisableTx disables UART transmitter.
 func (d *Driver) DisableTx() {
-	d.P.Task(STOPTX).Trigger()
+	d.p.Task(STOPTX).Trigger()
 }
 
 // UsePin configurs the specified pin to be used as signal s.
-func (d *Driver) UsePin(s Signal, pin gpio.Pin) {
-	d.P.StorePSEL(s, pin.PSEL())
+func (d *Driver) UsePin(pin gpio.Pin, s Signal) {
+	switch s {
+	case TXD, RTSn:
+		pin.Set()
+		pin.Setup(gpio.ModeOut)
+	default:
+		pin.Setup(gpio.ModeIn)
+	}
+	d.p.StorePSEL(s, pin.PSEL())
 }
 
 // SetBaudrate sets Tx and Rx baudrate.
 func (d *Driver) SetBaudrate(br Baudrate) {
-	d.P.StoreBAUDRATE(br)
+	d.p.StoreBAUDRATE(br)
 }
 
 // SetConfig allows to configure UART peripheral to use hardware flow controll,
 // add and check parity bit, and use two stop bits instead default one.
 func (d *Driver) SetConfig(cfg Config) {
-	d.P.StoreCONFIG(cfg)
+	d.p.StoreCONFIG(cfg)
 }
 
 // IRQ returns the interrupt assigned to UART peripheral used by driver.
 func (d *Driver) IRQ() rtos.IRQ {
-	return d.P.IRQ()
+	return d.p.IRQ()
 }
 
 // ISR handles UART interrupts. It supports the reading thread to run in
 // parallel on another CPU.
 func (d *Driver) ISR() {
-	p := d.P
+	p := d.p
 
 tryAgain:
 	rxwakeup := false
@@ -209,12 +240,13 @@ func (d *Driver) Len() int {
 // any guarantee that the byte sent was received by the remote party.
 func (d *Driver) WriteByte(b byte) error {
 	d.txdone.Clear()
-	d.P.StoreTXD(b)
+	p := d.p
+	p.StoreTXD(b)
 	if d.txdone.Sleep(d.timeoutTx) {
 		return nil
 	}
-	d.P.Task(STOPTX).Trigger()
-	d.P.Event(TXDRDY).Clear()
+	p.Task(STOPTX).Trigger()
+	p.Event(TXDRDY).Clear()
 	return ErrTimeout
 }
 
@@ -226,12 +258,13 @@ func (d *Driver) WriteString(s string) (int, error) {
 	d.txdata = s
 	d.txn = 0
 	d.txdone.Clear()
-	d.P.StoreTXD(s[0])
+	p := d.p
+	p.StoreTXD(s[0])
 	if d.txdone.Sleep(d.timeoutTx) {
 		return len(s), nil
 	}
-	d.P.Task(STOPTX).Trigger()
-	d.P.Event(TXDRDY).Clear()
+	p.Task(STOPTX).Trigger()
+	p.Event(TXDRDY).Clear()
 	return d.txn, ErrTimeout
 }
 
@@ -272,8 +305,8 @@ func (d *Driver) markDataRead(lastr int) error {
 		d.overflow = false
 		return ErrBufOverflow
 	}
-	if e := d.P.LoadERRORSRC(); e != 0 {
-		d.P.ClearERRORSRC(e)
+	if e := d.p.LoadERRORSRC(); e != 0 {
+		d.p.ClearERRORSRC(e)
 		return e
 	}
 	return nil

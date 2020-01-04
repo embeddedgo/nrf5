@@ -2,35 +2,28 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// This example shows how to use the UART peripheral.
 package main
 
 import (
-	"embedded/rtos"
-
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/uart"
+	"github.com/embeddedgo/nrf5/hal/uart/uart0"
 
 	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
 )
-
-var tts *uart.Driver
 
 func main() {
 	p1 := gpio.P(1)
 	rxpin := p1.Pin(10)
 	txpin := p1.Pin(13)
 
-	rxpin.Setup(gpio.ModeIn)
-	txpin.Set()
-	txpin.Setup(gpio.ModeOut)
-
-	tts = uart.NewDriver(uart.UART(0), make([]byte, 128))
-	tts.UsePin(uart.RXD, rxpin)
-	tts.UsePin(uart.TXD, txpin)
-	tts.IRQ().Enable(rtos.IntPrioLow)
+	tts := uart0.Driver()
+	tts.UsePin(rxpin, uart.RXD)
+	tts.UsePin(txpin, uart.TXD)
 	tts.SetBaudrate(uart.Baud115200)
 	tts.Enable()
-	tts.EnableRx()
+	tts.EnableRx(make([]byte, 128))
 	tts.EnableTx()
 
 	buf := make([]byte, 64)
@@ -46,6 +39,3 @@ func main() {
 		}
 	}
 }
-
-//go:interrupthandler
-func UARTE0_UART0_Handler() { tts.ISR() }
