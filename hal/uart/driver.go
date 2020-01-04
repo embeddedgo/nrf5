@@ -21,8 +21,8 @@ import (
 // errors as asynchronous events but at least the ErrOverrun is in fact
 // synchronous. So the Rx errors other than ErrTimeout are simply imformative
 // about the connection quallity or the reading performance. You can not
-// determine which data has been affected by such error (use other techniques to
-// ensure data integrity.
+// determine which data has been affected (use other techniques to ensure data
+// integrity.
 //
 // Set the read timeout to ensure wake-up in case of missing data. The hardware
 // may not detect some Rx errors or the error can be signaled before you try to
@@ -35,9 +35,8 @@ import (
 // In this case you can use write timeout to detect problems with the remote
 // party or RTS/CTS signaling.
 //
-// The driver does not support concurent reading or writing by multiple
-// gorutines. It supports one reading goroutine and one writing goroutine that
-// both can work concurrently with the driver.
+// The driver supports one reading goroutine and one writing goroutine that both
+// can work concurrently with the driver.
 type Driver struct {
 	P *Periph
 
@@ -59,11 +58,10 @@ type Driver struct {
 // NewDriver returns a new driver for p. The rxbuf can be nil in case of Tx-only
 // use case. Otherwise at least 2-byte buffer is required because one byte
 // remains unused for efficient checking of an empty state. At least 8-byte
-// buffer is recommended because there is 6-byte hardware buffer and the
-// ISR reads from it until it is empty and drops read bytes if the software
-// buffer is full. In case of 1 Mbaud speed n*256 byte buffer is recomended
-// where n is the number o other busy threads. The driver can use up to 65536
-// bytes for its Rx buffer.
+// buffer is recommended because there is 6-byte buffer hardware. The ISR do not
+// return until read all bytes from hardware buffer. If the software buffer is
+// full it simply drops read bytes until there is no more bytes to read from
+// hardware. The driver can not use more than 65536 bytes for its Rx buffer.
 func NewDriver(p *Periph, rxbuf []byte) *Driver {
 	if len(rxbuf) > 65536 {
 		rxbuf = rxbuf[:65536]
@@ -71,10 +69,12 @@ func NewDriver(p *Periph, rxbuf []byte) *Driver {
 	return &Driver{timeoutRx: -1, timeoutTx: -1, P: p, rxbuf: rxbuf}
 }
 
+// Enable enables UART peripheral.
 func (d *Driver) Enable() {
 	d.P.StoreENABLE(true)
 }
 
+// Disable disables UART peripheral.
 func (d *Driver) Disable() {
 	d.P.StoreENABLE(false)
 }
@@ -106,26 +106,23 @@ func (d *Driver) DisableTx() {
 	d.P.Task(STOPTX).Trigger()
 }
 
-func (d *Driver) SetReadTimeout(ns int64) {
-	d.timeoutRx = ns
-}
-
-func (d *Driver) SetWriteTimeout(ns int64) {
-	d.timeoutTx = ns
-}
-
+// UsePin configurs the specified pin to be used as signal s.
 func (d *Driver) UsePin(s Signal, pin gpio.Pin) {
 	d.P.StorePSEL(s, pin.PSEL())
 }
 
+// SetBaudrate sets Tx and Rx baudrate.
 func (d *Driver) SetBaudrate(br Baudrate) {
 	d.P.StoreBAUDRATE(br)
 }
 
+// SetConfig allows to configure UART peripheral to use hardware flow controll,
+// add and check parity bit, and use two stop bits instead default one.
 func (d *Driver) SetConfig(cfg Config) {
 	d.P.StoreCONFIG(cfg)
 }
 
+// IRQ returns the interrupt assigned to UART peripheral used by driver.
 func (d *Driver) IRQ() rtos.IRQ {
 	return d.P.IRQ()
 }
@@ -198,7 +195,7 @@ tryAgain:
 	}
 }
 
-// Len returns number of bytes that are ready to read from internal Rx buffer.
+// Len returns the number of bytes that are ready to read from Rx buffer.
 func (d *Driver) Len() int {
 	lastrw := atomic.LoadUint32(&d.lastrw)
 	n := int(lastrw&0xFFFF) - int(lastrw>>16)
@@ -208,8 +205,8 @@ func (d *Driver) Len() int {
 	return n
 }
 
-// In case of timeout the transmission is stopped but you can not be sure the
-// byte was sent or not. Use EnableTx before subsequent write.
+// WriteByte sends one byte to the remote party and returns an error if detected// WriteByte can block if the hardware flow control is used. It does not provide
+// any guarantee that the byte sent was received by the remote party.
 func (d *Driver) WriteByte(b byte) error {
 	d.txdone.Clear()
 	d.P.StoreTXD(b)
@@ -221,8 +218,7 @@ func (d *Driver) WriteByte(b byte) error {
 	return ErrTimeout
 }
 
-// In case of timeout the transmission is stopped and you can not rely on the
-// returned number of bytes sent. Use EnableTx before subsequent write.
+// WriteString works like Write.
 func (d *Driver) WriteString(s string) (int, error) {
 	if len(s) == 0 {
 		return 0, nil
@@ -239,32 +235,36 @@ func (d *Driver) WriteString(s string) (int, error) {
 	return d.txn, ErrTimeout
 }
 
+// Write sends bytes from p to the remote party. It return the number of bytes
+// sent and error if detected. It does not provide any guarantee that the bytes
+// sent were received by the remote party.
 func (d *Driver) Write(p []byte) (int, error) {
 	return d.WriteString(*(*string)(unsafe.Pointer(&p)))
 }
 
-func (d *Driver) waitRxData() (lastr, lastw uint32) {
+func (d *Driver) waitRxData() (lastr, lastw int) {
 	lastrw := atomic.LoadUint32(&d.lastrw)
-	lastr, lastw = lastrw>>16, lastrw&0xFFFF
+	lastr, lastw = int(lastrw>>16), int(lastrw&0xFFFF)
 	if lastr != lastw || !d.rxready.Sleep(d.timeoutRx) {
 		return
 	}
 	lastrw = atomic.LoadUint32(&d.lastrw)
-	lastr, lastw = lastrw>>16, lastrw&0xFFFF
+	lastr, lastw = int(lastrw>>16), int(lastrw&0xFFFF)
 	if lastr != lastw {
 		return
 	}
 	panic("wakeup on empty buffer")
 }
 
-func (d *Driver) markDataRead(lastr uint32) error {
+func (d *Driver) markDataRead(lastr int) error {
+	ulastr := uint32(lastr)
 	for {
 		lastrw := atomic.LoadUint32(&d.lastrw)
 		lastw := lastrw & 0xFFFF
-		if lastw == lastr {
+		if lastw == ulastr {
 			d.rxready.Clear()
 		}
-		if atomic.CompareAndSwapUint32(&d.lastrw, lastrw, lastr<<16|lastw) {
+		if atomic.CompareAndSwapUint32(&d.lastrw, lastrw, ulastr<<16|lastw) {
 			break
 		}
 	}
@@ -279,13 +279,14 @@ func (d *Driver) markDataRead(lastr uint32) error {
 	return nil
 }
 
-// ReadByte reads one byte from the internal buffer.
+// ReadByte reads one byte and returns error if detected. ReadByte blocks only
+// if the internal buffer is empty (d.Len() > 0 ensure non-blocking read).
 func (d *Driver) ReadByte() (b byte, err error) {
 	lastr, lastw := d.waitRxData()
 	if lastr == lastw {
 		return 0, ErrTimeout
 	}
-	if lastr++; int(lastr) == len(d.rxbuf) {
+	if lastr++; lastr == len(d.rxbuf) {
 		lastr = 0
 	}
 	return d.rxbuf[lastr], d.markDataRead(lastr)
@@ -303,25 +304,49 @@ func (d *Driver) Read(p []byte) (n int, err error) {
 		return 0, ErrTimeout
 	}
 	nextr := lastr + 1
-	if int(nextr) == len(d.rxbuf) {
+	if nextr == len(d.rxbuf) {
 		nextr = 0
 	}
 	if nextr <= lastw {
 		n = copy(p, d.rxbuf[nextr:lastw+1])
 	} else {
 		n = copy(p, d.rxbuf[nextr:])
-		n += copy(p[n:], d.rxbuf[:lastw+1])
+		if n < len(p) {
+			n += copy(p[n:], d.rxbuf[:lastw+1])
+		}
 	}
-	return n, d.markDataRead(lastw)
+	lastr += n
+	if lastr >= len(d.rxbuf) {
+		lastr -= len(d.rxbuf)
+	}
+	return n, d.markDataRead(lastr)
+}
+
+// SetReadTimeout sets the read timeout used by Read* functions.
+func (d *Driver) SetReadTimeout(ns int64) {
+	d.timeoutRx = ns
+}
+
+// SetWriteTimeout sets the write timeout used by Write* functions.
+func (d *Driver) SetWriteTimeout(ns int64) {
+	d.timeoutTx = ns
 }
 
 type DriverError uint8
 
 const (
+	// ErrBufOverflow is returned if one or more received bytes has been dropped
+	// because of the lack of free space in the driver's receive buffer.
 	ErrBufOverflow DriverError = iota + 1
+
+	// ErrTimeout is returned if timeout occured. It means that te read/write
+	// operation has been interrupted and the receiver/transmitter (write) has
+	// been disabled (use EnableRx/EnableTx to reenable them). In case of write
+	// you can not determine the exact number of bytes sent to the remote party.
 	ErrTimeout
 )
 
+// Error implements error interface.
 func (e DriverError) Error() string {
 	switch e {
 	case ErrBufOverflow:

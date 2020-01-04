@@ -7,7 +7,6 @@ package main
 import (
 	"embedded/rtos"
 
-	"github.com/embeddedgo/nrf5/hal/clock"
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/uart"
 
@@ -17,8 +16,6 @@ import (
 var tts *uart.Driver
 
 func main() {
-	clock.StoreTRACECONFIG(clock.T4MHz, clock.Serial) // enable SWO on P1.00
-
 	p1 := gpio.P(1)
 	rxpin := p1.Pin(10)
 	txpin := p1.Pin(13)
@@ -27,20 +24,20 @@ func main() {
 	txpin.Set()
 	txpin.Setup(gpio.ModeOut)
 
-	tts = uart.NewDriver(uart.UART(0), make([]byte, 256))
+	tts = uart.NewDriver(uart.UART(0), make([]byte, 128))
 	tts.UsePin(uart.RXD, rxpin)
 	tts.UsePin(uart.TXD, txpin)
 	tts.IRQ().Enable(rtos.IntPrioLow)
-	tts.SetBaudrate(uart.Baud1M)
+	tts.SetBaudrate(uart.Baud115200)
 	tts.Enable()
 	tts.EnableRx()
 	tts.EnableTx()
 
-	buf := make([]byte, 128)
+	buf := make([]byte, 64)
 	for {
 		n, err := tts.Read(buf)
 		if n != 0 {
-			tts.WriteString("inp:  ")
+			tts.WriteString("inp: ")
 			tts.Write(buf[:n])
 			tts.WriteString("\r\n")
 		}
