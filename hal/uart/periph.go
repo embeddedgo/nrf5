@@ -27,9 +27,9 @@ type Periph struct {
 	psel     [4]mmio.U32
 	rxd      mmio.U32
 	txd      mmio.U32
-	_        mmio.U32
+	_        uint32
 	baudrate mmio.U32
-	_        [17]mmio.U32
+	_        [17]uint32
 	config   mmio.U32
 }
 
@@ -167,13 +167,14 @@ const (
 	Baud28800  Baudrate = 0x0075F000 // Actual rate: 28829 baud.
 	Baud31250  Baudrate = 0x00800000
 	Baud38400  Baudrate = 0x009D5000 // Actual rate: 38462 baud.
-	Baud57600  Baudrate = 0x00EBF000 // Actual rate: 55944 baud.
-	Baud76800  Baudrate = 0x013A9000 // Actual rate: 57602 baud.
-	Baud115200 Baudrate = 0x01D7E000 // Actual rate: 115204 baud.
-	Baud230400 Baudrate = 0x03AFB000 // Actual rate: 230393 baud.
-	Baud250k   Baudrate = 0x04000000
+	Baud56000  Baudrate = 0x00E50000 // Actual rate: 55944 baud.
+	Baud57600  Baudrate = 0x00EBF000 // Actual rate: 57762 baud.
+	Baud76800  Baudrate = 0x013A9000 // Actual rate: 76923 baud.
+	Baud115200 Baudrate = 0x01D7E000 // Actual rate: 115942 baud.
+	Baud230400 Baudrate = 0x03AFB000 // Actual rate: 231884 baud.
+	Baud250000 Baudrate = 0x04000000
 	Baud460800 Baudrate = 0x075F7000 // Actual rate: 470588 baud.
-	Baud921600 Baudrate = 0x0EBEE000 // Actual rate: 921585 baud.
+	Baud921600 Baudrate = 0x0EBED000 // Actual rate: 941176 baud.
 	Baud1M     Baudrate = 0x10000000
 )
 
