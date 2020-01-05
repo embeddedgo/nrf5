@@ -58,8 +58,7 @@ type Driver struct {
 
 // NewDriver returns a new driver for p.
 func NewDriver(p *Periph) *Driver {
-	p.Event(RXDRDY).EnableIRQ()
-	p.Event(TXDRDY).EnableIRQ()
+	p.EnableIRQ(1<<RXDRDY | 1<<TXDRDY)
 	return &Driver{p: p, timeoutRx: -1, timeoutTx: -1}
 }
 
@@ -159,8 +158,8 @@ tryAgain:
 	pollmore := false
 
 	// send next byte if the previous one was sent (little work so do it first)
-	if p.Event(TXDRDY).IsSet() {
-		p.Event(TXDRDY).Clear()
+	if txdrdy := p.Event(TXDRDY); txdrdy.IsSet() {
+		txdrdy.Clear()
 		if n := d.txn + 1; n < len(d.txdata) {
 			d.txn = n
 			p.StoreTXD(d.txdata[n])
@@ -228,21 +227,21 @@ func (d *Driver) Len() int {
 
 // WriteByte sends one byte to the remote party and returns an error if detected// WriteByte can block if the hardware flow control is used. It does not provide
 // any guarantee that the byte sent was received by the remote party.
-func (d *Driver) WriteByte(b byte) error {
+func (d *Driver) WriteByte(b byte) (err error) {
 	d.txdone.Clear()
 	p := d.p
-	p.StoreTXD(b)
 	p.Task(STARTTX).Trigger()
-	if d.txdone.Sleep(d.timeoutTx) {
-		return nil
+	p.StoreTXD(b)
+	if !d.txdone.Sleep(d.timeoutTx) {
+		err = ErrTimeout
 	}
 	p.Task(STOPTX).Trigger()
 	p.Event(TXDRDY).Clear()
-	return ErrTimeout
+	return
 }
 
 // WriteString works like Write.
-func (d *Driver) WriteString(s string) (int, error) {
+func (d *Driver) WriteString(s string) (n int, err error) {
 	if len(s) == 0 {
 		return 0, nil
 	}
@@ -250,14 +249,14 @@ func (d *Driver) WriteString(s string) (int, error) {
 	d.txn = 0
 	d.txdone.Clear()
 	p := d.p
-	p.StoreTXD(s[0])
 	p.Task(STARTTX).Trigger()
-	if d.txdone.Sleep(d.timeoutTx) {
-		return len(s), nil
+	p.StoreTXD(s[0])
+	if !d.txdone.Sleep(d.timeoutTx) {
+		err = ErrTimeout
 	}
 	p.Task(STOPTX).Trigger()
 	p.Event(TXDRDY).Clear()
-	return d.txn, ErrTimeout
+	return d.txn, err
 }
 
 // Write sends bytes from p to the remote party. It return the number of bytes
@@ -364,10 +363,9 @@ const (
 	// because of the lack of free space in the driver's receive buffer.
 	ErrBufOverflow DriverError = iota + 1
 
-	// ErrTimeout is returned if timeout occured. It means that te read/write
-	// operation has been interrupted and the receiver/transmitter (write) has
-	// been disabled (use EnableRx/EnableTx to reenable them). In case of write
-	// you can not determine the exact number of bytes sent to the remote party.
+	// ErrTimeout is returned if timeout occured. It means that the read/write
+	// operation has been interrupted. In case of write you can not determine
+	// the exact number of bytes sent to the remote party.
 	ErrTimeout
 )
 
