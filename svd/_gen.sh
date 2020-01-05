@@ -2,7 +2,7 @@
 
 set -e
 
-cd ../../../embeddedgo/nrf5/hal
+cd ../../../embeddedgo/nrf5/hal1
 hal=$(pwd)
 cd ../p
 rm -rf *
