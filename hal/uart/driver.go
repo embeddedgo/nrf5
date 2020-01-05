@@ -58,7 +58,9 @@ type Driver struct {
 
 // NewDriver returns a new driver for p.
 func NewDriver(p *Periph) *Driver {
-	return &Driver{timeoutRx: -1, timeoutTx: -1, p: p}
+	p.Event(RXDRDY).EnableIRQ()
+	p.Event(TXDRDY).EnableIRQ()
+	return &Driver{p: p, timeoutRx: -1, timeoutTx: -1}
 }
 
 func (d *Driver) Periph() *Periph {
@@ -104,7 +106,7 @@ func (d *Driver) EnableRx(rxbuf []byte) {
 // DisableRx disables the UART receiver. The receive buffer is returned and no
 // longer used by driver allowing GC to collect its memory. You can use the
 // STOPRX and STARTRX tasks directly if you want to temporary disable the
-// receiver leaving the driver intact. 
+// receiver leaving the driver intact.
 func (d *Driver) DisableRx() (rxbuf []byte) {
 	p := d.p
 	rxto := p.Event(RXTO)
@@ -116,18 +118,6 @@ func (d *Driver) DisableRx() (rxbuf []byte) {
 	rxbuf = d.rxbuf
 	d.rxbuf = nil
 	return
-}
-
-// EnableTx enables UART transmitter.
-func (d *Driver) EnableTx() {
-	p := d.p
-	p.Event(TXDRDY).EnableIRQ()
-	p.Task(STARTTX).Trigger()
-}
-
-// DisableTx disables UART transmitter.
-func (d *Driver) DisableTx() {
-	d.p.Task(STOPTX).Trigger()
 }
 
 // UsePin configurs the specified pin to be used as signal s.
@@ -242,6 +232,7 @@ func (d *Driver) WriteByte(b byte) error {
 	d.txdone.Clear()
 	p := d.p
 	p.StoreTXD(b)
+	p.Task(STARTTX).Trigger()
 	if d.txdone.Sleep(d.timeoutTx) {
 		return nil
 	}
@@ -260,6 +251,7 @@ func (d *Driver) WriteString(s string) (int, error) {
 	d.txdone.Clear()
 	p := d.p
 	p.StoreTXD(s[0])
+	p.Task(STARTTX).Trigger()
 	if d.txdone.Sleep(d.timeoutTx) {
 		return len(s), nil
 	}

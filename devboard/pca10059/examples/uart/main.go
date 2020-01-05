@@ -24,7 +24,6 @@ func main() {
 	tts.SetBaudrate(uart.Baud115200)
 	tts.Enable()
 	tts.EnableRx(make([]byte, 128))
-	tts.EnableTx()
 
 	buf := make([]byte, 64)
 	for {

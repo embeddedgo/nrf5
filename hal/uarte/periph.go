@@ -39,7 +39,7 @@ type Periph struct {
 	config    mmio.U32
 }
 
-func UART(n int) *Periph {
+func UARTE(n int) *Periph {
 	switch n {
 	case 0:
 		return (*Periph)(unsafe.Pointer(mmap.UARTE0_BASE))
