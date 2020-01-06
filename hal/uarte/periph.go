@@ -4,7 +4,7 @@
 
 // Package uarte provides access to the registers of UARTE peripheral.
 // It also provides the driver that implements io.ReadWriter interface.
-package uart
+package uarte
 
 import (
 	"embedded/mmio"
@@ -104,7 +104,7 @@ func (e ErrorBits) Error() string {
 	if e == 0 {
 		return ""
 	}
-	s := "uart:"
+	s := "uarte:"
 	if e&EOVERRUN != 0 {
 		s += " overrun"
 	}
