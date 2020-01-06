@@ -14,7 +14,6 @@ import (
 var driver *uart.Driver
 
 // Driver returns ready to use driver for UART.
-// information.
 func Driver() *uart.Driver {
 	if driver == nil {
 		driver = uart.NewDriver(uart.UART(0))
