@@ -15,7 +15,7 @@
 //  0x00C 32  TASK_TRIGOVRFLW   Set COUNTER to 0xFFFFF0
 //  0x100 32  EVENT_TICK        Event on COUNTER increment
 //  0x104 32  EVENT_OVRFLW      Event on COUNTER overflow
-//  0x140 32  EVENT_COMPARE[4]  Description collection: Compare event on CC[n] match
+//  0x140 32  EVENT_COMPARE[4]  Compare event on CC[n] match
 //  0x304 32  INTENSET          Enable interrupt
 //  0x308 32  INTENCLR          Disable interrupt
 //  0x340 32  EVTEN             Enable or disable event routing
@@ -23,7 +23,7 @@
 //  0x348 32  EVTENCLR          Disable event routing
 //  0x504 32  COUNTER           Current COUNTER value
 //  0x508 32  PRESCALER         12 bit prescaler for COUNTER frequency (32768/(PRESCALER+1)).Must be written when RTC is stopped
-//  0x540 32  CC[4]             Description collection: Compare register n
+//  0x540 32  CC[4]             Compare register n
 // Import:
 //  github.com/embeddedgo/nrf5/p/mmap
 package rtc

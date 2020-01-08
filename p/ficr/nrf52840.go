@@ -9,17 +9,17 @@
 // Registers:
 //  0x010 32  CODEPAGESIZE      Code memory page size
 //  0x014 32  CODESIZE          Code memory size
-//  0x060 32  DEVICEID[2]       Description collection: Device identifier
-//  0x080 32  ER[4]             Description collection: Encryption root, word n
-//  0x090 32  IR[4]             Description collection: Identity Root, word n
+//  0x060 32  DEVICEID[2]       Device identifier
+//  0x080 32  ER[4]             Encryption root, word n
+//  0x090 32  IR[4]             Identity Root, word n
 //  0x0A0 32  DEVICEADDRTYPE    Device address type
-//  0x0A4 32  DEVICEADDR[2]     Description collection: Device address n
+//  0x0A4 32  DEVICEADDR[2]     Device address n
 //  0x100 32  INFO_PART         Part code
 //  0x104 32  INFO_VARIANT      Build code (hardware version and production configuration)
 //  0x108 32  INFO_PACKAGE      Package option
 //  0x10C 32  INFO_RAM          RAM variant
 //  0x110 32  INFO_FLASH        Flash variant
-//  0x350 32  PRODTEST[3]       Description collection: Production test signature n
+//  0x350 32  PRODTEST[3]       Production test signature n
 //  0x404 32  TEMP_A[6]         Slope definition
 //  0x41C 32  TEMP_B[6]         Y-intercept
 //  0x434 32  TEMP_T[5]         Segment end

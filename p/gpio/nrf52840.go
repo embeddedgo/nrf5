@@ -17,7 +17,7 @@
 //  0x51C 32  DIRCLR       DIR clear register
 //  0x520 32  LATCH        Latch register indicating what GPIO pins that have met the criteria set in the PIN_CNF[n].SENSE registers
 //  0x524 32  DETECTMODE   Select between default DETECT signal behaviour and LDETECT mode
-//  0x700 32  PIN_CNF[32]  Description collection: Configuration of GPIO pins
+//  0x700 32  PIN_CNF[32]  Configuration of GPIO pins
 // Import:
 //  github.com/embeddedgo/nrf5/p/mmap
 package gpio

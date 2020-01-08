@@ -7,10 +7,10 @@
 // Instances:
 //  UICR  UICR_BASE  -  -  User information configuration registers
 // Registers:
-//  0x014 32  NRFFW[15]     Description collection: Reserved for Nordic firmware design
-//  0x050 32  NRFHW[12]     Description collection: Reserved for Nordic hardware design
-//  0x080 32  CUSTOMER[32]  Description collection: Reserved for customer
-//  0x200 32  PSELRESET[2]  Description collection: Mapping of the nRESET function (see POWER chapter for details)
+//  0x014 32  NRFFW[15]     Reserved for Nordic firmware design
+//  0x050 32  NRFHW[12]     Reserved for Nordic hardware design
+//  0x080 32  CUSTOMER[32]  Reserved for customer
+//  0x200 32  PSELRESET[2]  Mapping of the nRESET function (see POWER chapter for details)
 //  0x208 32  APPROTECT     Access port protection
 //  0x20C 32  NFCPINS       Setting of pins dedicated to NFC functionality: NFC antenna or GPIO
 //  0x210 32  DEBUGCTRL     Processor debug control
