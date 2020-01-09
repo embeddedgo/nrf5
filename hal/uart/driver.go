@@ -158,8 +158,8 @@ tryAgain:
 	pollmore := false
 
 	// send next byte if the previous one was sent (little work so do it first)
-	if txdrdy := p.Event(TXDRDY); txdrdy.IsSet() {
-		txdrdy.Clear()
+	if p.Event(TXDRDY).IsSet() {
+		p.Event(TXDRDY).Clear()
 		if n := d.txn + 1; n < len(d.txdata) {
 			d.txn = n
 			p.StoreTXD(d.txdata[n])
@@ -194,7 +194,7 @@ tryAgain:
 			rxrdy = p.Event(RXDRDY).IsSet()
 		}
 		for !atomic.CompareAndSwapUint32(&d.lastrw, lastrw, lastr<<16|lastw) {
-			// in the meantime the rxbuf was read
+			// in the meantime the rxbuf was read (multicore system)
 			lastrw = atomic.LoadUint32(&d.lastrw)
 			lastr = lastrw >> 16
 			rxwakeup = (lastr == lastrw&0xFFFF)
@@ -213,16 +213,6 @@ tryAgain:
 		// In case of nRF52+mbr+softdevice(off) useful for baudrates >= 921600.
 		goto tryAgain
 	}
-}
-
-// Len returns the number of bytes that are ready to read from Rx buffer.
-func (d *Driver) Len() int {
-	lastrw := atomic.LoadUint32(&d.lastrw)
-	n := int(lastrw&0xFFFF) - int(lastrw>>16)
-	if n < 0 {
-		n += len(d.rxbuf)
-	}
-	return n
 }
 
 // WriteByte sends one byte to the remote party and returns an error if detected// WriteByte can block if the hardware flow control is used. It does not provide
@@ -268,6 +258,16 @@ func (d *Driver) WriteString(s string) (n int, err error) {
 // sent were received by the remote party.
 func (d *Driver) Write(p []byte) (int, error) {
 	return d.WriteString(*(*string)(unsafe.Pointer(&p)))
+}
+
+// Len returns the number of bytes that are ready to read from Rx buffer.
+func (d *Driver) Len() int {
+	lastrw := atomic.LoadUint32(&d.lastrw)
+	n := int(lastrw&0xFFFF) - int(lastrw>>16)
+	if n < 0 {
+		n += len(d.rxbuf)
+	}
+	return n
 }
 
 func (d *Driver) waitRxData() (lastr, lastw int) {
