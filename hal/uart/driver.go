@@ -58,7 +58,6 @@ type Driver struct {
 
 // NewDriver returns a new driver for p.
 func NewDriver(p *Periph) *Driver {
-	p.EnableIRQ(1<<RXDRDY | 1<<TXDRDY)
 	return &Driver{p: p, timeoutRx: -1, timeoutTx: -1}
 }
 
@@ -111,6 +110,7 @@ func (d *Driver) DisableRx() (rxbuf []byte) {
 	rxto := p.Event(RXTO)
 	rxto.Clear()
 	p.Task(STOPRX).Trigger()
+	p.Event(RXDRDY).DisableIRQ()
 	for !rxto.IsSet() {
 		runtime.Gosched()
 	}
@@ -230,12 +230,14 @@ func (d *Driver) Len() int {
 func (d *Driver) WriteByte(b byte) (err error) {
 	d.txdone.Clear()
 	p := d.p
+	p.Event(TXDRDY).EnableIRQ()
 	p.Task(STARTTX).Trigger()
 	p.StoreTXD(b)
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
 	p.Task(STOPTX).Trigger()
+	p.Event(TXDRDY).DisableIRQ()
 	p.Event(TXDRDY).Clear()
 	return
 }
@@ -249,12 +251,14 @@ func (d *Driver) WriteString(s string) (n int, err error) {
 	d.txn = 0
 	d.txdone.Clear()
 	p := d.p
+	p.Event(TXDRDY).EnableIRQ()
 	p.Task(STARTTX).Trigger()
 	p.StoreTXD(s[0])
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
 	p.Task(STOPTX).Trigger()
+	p.Event(TXDRDY).DisableIRQ()
 	p.Event(TXDRDY).Clear()
 	return d.txn, err
 }
