@@ -15,7 +15,7 @@ type Pin struct {
 
 // IsValid reports whether p represents a valid pin.
 func (p Pin) IsValid() bool {
-	return p.h != 0
+	return p.h&^0x7F != 0
 }
 
 // Port returns the port where the pin is located.
@@ -25,7 +25,7 @@ func (p Pin) Port() *Port {
 
 // PSEL returns the PSEL representation of GPIO pin in connected state.
 func (p Pin) PSEL() PSEL {
-	if p.h == 0 {
+	if p.h&^0x7F == 0 {
 		return 0xFFFFFFFF
 	}
 	return PSEL(p.h & 0x7F)
