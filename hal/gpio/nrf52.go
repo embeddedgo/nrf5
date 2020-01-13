@@ -14,11 +14,11 @@ func portaddr(n int) uintptr {
 	if uint(n) > 1 {
 		return 0
 	}
-	return mmap.P0_BASE + uintptr(n)*0x300
+	return (mmap.P0_BASE + 0x500) + uintptr(n)*0x300
 }
 
 func portnum(p *Port) int {
-	n := int(uintptr(unsafe.Pointer(p))-mmap.P0_BASE) / 0x300
+	n := int(uintptr(unsafe.Pointer(p))-(mmap.P0_BASE+0x500)) / 0x300
 	if uint(n) > 1 {
 		return -1
 	}

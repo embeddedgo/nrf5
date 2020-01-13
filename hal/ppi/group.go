@@ -39,7 +39,7 @@ func (g Group) SetChannels(c Channels) {
 	r().chg[g].Store(uint32(c))
 }
 
-type Task byte
+type Task uint8
 
 // EN returns task that can be used to enable channel group g.
 func (g Group) EN() Task {

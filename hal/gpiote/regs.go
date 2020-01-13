@@ -9,8 +9,8 @@ import (
 	"embedded/rtos"
 	"unsafe"
 
-	"github.com/embeddedgo/nrf5/hal/internal/mmap"
 	"github.com/embeddedgo/nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/p/mmap"
 )
 
 type regs struct {
@@ -21,7 +21,7 @@ type regs struct {
 }
 
 func r() *regs {
-	return (*regs)(unsafe.Pointer(mmap.APB_BASE + 0x06000))
+	return (*regs)(unsafe.Pointer(mmap.GPIOTE_BASE))
 }
 
 func IRQ() rtos.IRQ {

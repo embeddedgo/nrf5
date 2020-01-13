@@ -11,7 +11,7 @@ import (
 
 // Port represents a GPIO port.
 type Port struct {
-	_          mmio.U32
+	_          uint32
 	out        mmio.U32
 	outset     mmio.U32
 	outclr     mmio.U32
@@ -21,7 +21,7 @@ type Port struct {
 	dirclr     mmio.U32
 	latch      mmio.U32 // TODO
 	detectmode mmio.U32 // TODO
-	_          [118]mmio.U32
+	_          [118]uint32
 	pincnf     [32]mmio.U32
 }
 

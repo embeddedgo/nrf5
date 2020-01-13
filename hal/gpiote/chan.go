@@ -30,7 +30,7 @@ func (c Chan) Free() {
 	internal.BitFree(&unusedChannels, 1<<c)
 }
 
-type Task byte
+type Task uint8
 
 // OUT returns task for writing to pin associated with channel c.
 func (c Chan) OUT() Task {
@@ -47,7 +47,7 @@ func (c Chan) CLR() Task {
 	return Task(c + 24)
 }
 
-type Event byte
+type Event uint8
 
 const PORT Event = 31 // From multiple input pins with SENSE mechanism enabled.
 
