@@ -2,5 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package ppi provides interface to Programmable Peripheral Interconnect.
-package ppi
+// +build nrf52832 nrf52840
+
+package gpiote
+
+const chanNum = 8

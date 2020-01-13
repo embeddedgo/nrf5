@@ -1,4 +1,4 @@
-// Copyright 2019 Michal Derkacz. All rights reserved.
+// Copyright 2020 Michal Derkacz. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,12 +6,29 @@ package gpiote
 
 import (
 	"github.com/embeddedgo/nrf5/hal/gpio"
+	"github.com/embeddedgo/nrf5/hal/internal"
 	"github.com/embeddedgo/nrf5/hal/te"
 )
 
-// Chan represents GPIOTE channel. There are 4 channels (8 in nRF52) numbered
-// from 0 to 3 (7 in nRF52).
+// ChanNum is the number of implemented GPIOTE channels (4 in case of nRF51, 8
+// in case of nRF52).
+const ChanNum = chanNum
+
+// Chan represents GPIOTE channel.
 type Chan int8
+
+var unusedChannels uint32 = 1<<chanNum - 1
+
+// ChanAlloc returns first unused GPIOTE channel. It returns negative number if
+// there is no free channels.
+func ChanAlloc() Chan {
+	return Chan(internal.BitAlloc(&unusedChannels))
+}
+
+// Free disables channel and returns it to the pool of unused channels.
+func (c Chan) Free() {
+	internal.BitFree(&unusedChannels, 1<<c)
+}
 
 type Task byte
 
@@ -20,12 +37,12 @@ func (c Chan) OUT() Task {
 	return Task(c)
 }
 
-// SET returns task for set pin associated with channel c (nRF52).
+// SET returns task for set pin associated with channel c. nRF52.
 func (c Chan) SET() Task {
 	return Task(c + 12)
 }
 
-// CLR returns task for clear pin associated with channel c (nRF52).
+// CLR returns task for clear pin associated with channel c. nRF52.
 func (c Chan) CLR() Task {
 	return Task(c + 24)
 }
@@ -62,10 +79,10 @@ const (
 func (c Chan) Config() (gpio.Pin, Config) {
 	v := r().config[c].Load()
 	const psel = 0x7F << 8
-	return gpio.SelPin(int8(v & psel >> 8)), Config(v &^ psel)
+	return gpio.PSEL(v & psel >> 8).Pin(), Config(v &^ psel)
 }
 
 // Setup setups channel c to use pin and cfg configuration.
 func (c Chan) Setup(pin gpio.Pin, cfg Config) {
-	r().config[c].Store(uint32(pin.Sel())<<8 | uint32(cfg))
+	r().config[c].Store(uint32(pin.PSEL())<<8 | uint32(cfg))
 }

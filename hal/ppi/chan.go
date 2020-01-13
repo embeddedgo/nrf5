@@ -1,14 +1,15 @@
+// Copyright 2020 Michal Derkacz. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package ppi
 
 import (
 	"unsafe"
 
-	"nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/hal/internal"
+	"github.com/embeddedgo/nrf5/hal/te"
 )
-
-// Chan represents PPI channel. There are 31 channels numbered from 0 to 31.
-// Channels from 20 to 31 are pre-programmed.
-type Chan byte
 
 // Pre-programmed channels.
 const (
@@ -25,6 +26,25 @@ const (
 	RTC0_COMPARE0__TIMER0_CLEAR    Chan = 30
 	RTC0_COMPARE0__TIMER0_START    Chan = 31
 )
+
+// Chan represents PPI channel. There are 32 channels numbered from 0 to 31.
+// Channels from 20 to 31 are pre-programmed.
+type Chan int8
+
+var unusedChannels uint32 = 1<<20 - 1
+
+// ChanAlloc returns first unused PPI channel. It returns negative number if
+// there is no free channels.
+func ChanAlloc() Chan {
+	return Chan(internal.BitAlloc(&unusedChannels))
+}
+
+// Free disables channel and returns it to the pool of unused channels.
+func (c Chan) Free() {
+	m := c.Mask()
+	m.Disable()
+	internal.BitFree(&unusedChannels, uint32(m))
+}
 
 func (c Chan) Mask() Channels {
 	return Channels(1) << c
@@ -65,12 +85,12 @@ func (c Chan) SetTEP(t *te.Task) {
 	r().ch[c].tep.Store(uint32(uintptr(unsafe.Pointer(t))))
 }
 
-// FTEP returns the value of Fork Task End Point register for channel c. nRF52.
-func (c Chan) FTEP() *te.Task {
+// TEP1 returns the value of Fork Task End Point register for channel c. nRF52.
+func (c Chan) TEP1() *te.Task {
 	return (*te.Task)(unsafe.Pointer(uintptr(r().forktep[c].Load())))
 }
 
-// SetFTEP sets the value of Fork Task End Point register for channel c. nRF52.
-func (c Chan) SetFTEP(t *te.Task) {
+// SetTEP1 sets the value of Fork Task End Point register for channel c. nRF52.
+func (c Chan) SetTEP1(t *te.Task) {
 	r().forktep[c].Store(uint32(uintptr(unsafe.Pointer(t))))
 }

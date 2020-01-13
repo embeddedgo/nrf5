@@ -1,35 +1,32 @@
+// Copyright 2020 Michal Derkacz. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package timer provides interface to manage nRF5 timers.
 package timer
 
 import (
-	"mmio"
-	"unsafe"
+	"embedded/mmio"
 
-	"nrf5/hal/internal/mmap"
-	"nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/hal/te"
 )
 
 // Periph represents timer/counter peripheral.
 type Periph struct {
 	te.Regs
 
-	_         [65]mmio.U32
-	mode      mmio.U32 // Timer mode selection.
-	bitmode   mmio.U32 // Configure the number of bits used by the TIMER.
-	_         mmio.U32
-	prescaler mmio.U32 // Timer prescaler register.
-	_         [11]mmio.U32
-	cc        [6]mmio.U32 // Capture/Compare registers.
+	_         [65]uint32
+	mode      mmio.U32 // timer mode selection
+	bitmode   mmio.U32 // number of bits used
+	_         uint32
+	prescaler mmio.U32
+	_         [11]uint32
+	cc        [6]mmio.U32 // capture/compare registers.
 }
 
-//emgo:const
-var (
-	TIMER0 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x08000))
-	TIMER1 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x09000))
-	TIMER2 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x0A000))
-	TIMER3 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x1A000)) // nRF52.
-	TIMER4 = (*Periph)(unsafe.Pointer(mmap.APB_BASE + 0x1B000)) // nRF52.
-)
+// TIMER returns n-th instance of TIMER peripheral or nil if this instance is
+// not implemented.
+func TIMER(n int) *Periph { return timer(n) }
 
 type Task byte
 
@@ -75,22 +72,23 @@ const (
 func (p *Periph) LoadSHORTS() Shorts   { return Shorts(p.Regs.LoadSHORTS()) }
 func (p *Periph) StoreSHORTS(s Shorts) { p.Regs.StoreSHORTS(uint32(s)) }
 
-type Mode byte
+type Mode uint8
 
 const (
-	TIMER   Mode = 0
-	COUNTER Mode = 1
+	Timer           Mode = 0
+	Counter         Mode = 1
+	LowPowerCounter Mode = 2
 )
 
 func (p *Periph) LoadMODE() Mode {
-	return Mode(p.mode.Bits(1))
+	return Mode(p.mode.Load())
 }
 
 func (p *Periph) StoreMODE(m Mode) {
 	p.mode.Store(uint32(m))
 }
 
-type Bitmode byte
+type Bitmode uint8
 
 const (
 	Bit8  Bitmode = 1
@@ -100,7 +98,7 @@ const (
 )
 
 func (p *Periph) LoadBITMODE() Bitmode {
-	return Bitmode(p.bitmode.Bits(3))
+	return Bitmode(p.bitmode.Load())
 }
 
 func (p *Periph) StoreBITMODE(m Bitmode) {
@@ -108,7 +106,7 @@ func (p *Periph) StoreBITMODE(m Bitmode) {
 }
 
 func (p *Periph) LoadPRESCALER() int {
-	return int(p.prescaler.Bits(0xf))
+	return int(p.prescaler.Load())
 }
 
 // StorePRESCALER sets prescaler to exp (freq = 16MHz/2^exp). Must only be used
