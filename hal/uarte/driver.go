@@ -50,7 +50,7 @@ func (d *Driver) UsePin(pin gpio.Pin, s Signal) {
 	default:
 		pin.Setup(gpio.ModeIn)
 	}
-	d.p.StorePSEL(s, pin.PSEL())
+	d.p.StorePSEL(s, pin.PSEL(), true)
 }
 
 // SetBaudrate sets Tx and Rx baudrate.

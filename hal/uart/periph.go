@@ -12,6 +12,7 @@ import (
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/internal"
+	"github.com/embeddedgo/nrf5/hal/internal/psel"
 	"github.com/embeddedgo/nrf5/hal/te"
 	"github.com/embeddedgo/nrf5/p/mmap"
 )
@@ -24,7 +25,7 @@ type Periph struct {
 	_        [31]uint32
 	enable   mmio.U32
 	_        uint32
-	psel     [4]mmio.U32
+	psel     [4]psel.Reg
 	rxd      mmio.U32
 	txd      mmio.U32
 	_        uint32
@@ -136,13 +137,13 @@ const (
 )
 
 // LoadPSEL returns configuration of signal s.
-func (p *Periph) LoadPSEL(s Signal) gpio.PSEL {
-	return gpio.PSEL(p.psel[s].Load())
+func (p *Periph) LoadPSEL(s Signal) (psel gpio.PSEL, en bool) {
+	return p.psel[s].Load()
 }
 
 // StorePSEL configures signal s.
-func (p *Periph) StorePSEL(s Signal, ps gpio.PSEL) {
-	p.psel[s].Store(uint32(ps))
+func (p *Periph) StorePSEL(s Signal, psel gpio.PSEL, en bool) {
+	p.psel[s].Store(psel, en)
 }
 
 // LoadRXD returns data received in previous transfers.
