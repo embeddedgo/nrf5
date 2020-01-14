@@ -59,3 +59,31 @@ func (p *Port) SetDirIn(pins Pins) {
 func (p *Port) SetDirOut(pins Pins) {
 	p.dirclr.Store(uint32(pins))
 }
+
+type DetectMode uint8
+
+const (
+	Direct  DetectMode = 0 // DETECT directly connected to PIN DETECT signals.
+	Latched DetectMode = 1 // Use the latched LDETECT behaviour.
+)
+
+// DetectMode returns current DETECT mode. nRF52.
+func (p *Port) DetectMode() DetectMode {
+	return DetectMode(p.detectmode.Load())
+}
+
+// DetectMode sets DETECT mode. nRF52.
+func (p *Port) SetDetectMode(mode DetectMode) {
+	p.detectmode.Store(uint32(mode))
+}
+
+// Latch returns pins that have met the criteria set by Sense* configuration
+// options. nRF52.
+func (p *Port) Latch() Pins {
+	return Pins(p.latch.Load())
+}
+
+// ClearLatch clears latch state for specified pins. nRF52.
+func (p *Port) ClearLatch(pins Pins) {
+	p.latch.Store(uint32(pins))
+}

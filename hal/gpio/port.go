@@ -19,8 +19,8 @@ type Port struct {
 	dir        mmio.U32
 	dirset     mmio.U32
 	dirclr     mmio.U32
-	latch      mmio.U32 // TODO
-	detectmode mmio.U32 // TODO
+	latch      mmio.U32 
+	detectmode mmio.U32
 	_          [118]uint32
 	pincnf     [32]mmio.U32
 }
