@@ -77,13 +77,13 @@ func (p *Port) SetDetectMode(mode DetectMode) {
 	p.detectmode.Store(uint32(mode))
 }
 
-// Latch returns pins that have met the criteria set by Sense* configuration
+// Detect returns pins that have met the criteria set by Sense* configuration
 // options. nRF52.
-func (p *Port) Latch() Pins {
+func (p *Port) Detect() Pins {
 	return Pins(p.latch.Load())
 }
 
-// ClearLatch clears latch state for specified pins. nRF52.
-func (p *Port) ClearLatch(pins Pins) {
+// ClearDetect clears the detect state for specified pins. nRF52.
+func (p *Port) ClearDetect(pins Pins) {
 	p.latch.Store(uint32(pins))
 }

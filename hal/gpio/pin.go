@@ -88,6 +88,17 @@ func (p Pin) Store(val int) {
 	}
 }
 
+// Detect reports whether the pin have met the criteria set by Sense*
+// configuration options. nRF52.
+func (p Pin) Detect() bool {
+	return p.Port().latch.Load()>>uint(p.Num())&1 != 0
+}
+
+// ClearDetect clears the detect state for pin. nRF52.
+func (p Pin) ClearDetect() {
+	p.Port().latch.Store(1 << uint(p.Num()))
+}
+
 // PSEL is numerical representation of GPIO pin used as peripheral digital
 // signal. It can have two states: connected or disconnected to the peripheral.
 type PSEL uint32
