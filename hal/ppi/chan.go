@@ -24,32 +24,32 @@ const (
 	RTC0_COMPARE0__TIMER0_START    te.Chan = 31
 )
 
-// LoadEEP returns the value of Event End Point register for the channel.
+// LoadEEP returns the channel Event End Point. nRF52-.
 func LoadEEP(c te.Chan) *te.Event {
 	return loadEEP(c)
 }
 
-// StoreEEP sets the value of Event End Point register for the channel.
+// StoreEEP sets the channel Event End Point. nRF52-.
 func StoreEEP(c te.Chan, e *te.Event) {
 	storeEEP(c, e)
 }
 
-// LoadTEP returns the value of Task End Point register for channel c.
+// LoadTEP returns the channel Task End Point. nRF52-.
 func LoadTEP(c te.Chan) *te.Task {
 	return loadTEP(c)
 }
 
-// StoreTEP sets the value of Task End Point register for channel c.
+// StoreTEP sets the value channel Task End Point. nRF52-.
 func StoreTEP(c te.Chan, t *te.Task) {
 	storeTEP(c, t)
 }
 
-// TEP1 returns the value of Fork Task End Point register for channel c. nRF52.
+// TEP1 returns the value of channel Fork Task End Point. nRF52.
 func TEP1(c te.Chan) *te.Task {
 	return loadTEP1(c)
 }
 
-// SetTEP1 sets the value of Fork Task End Point register for channel c. nRF52.
+// SetTEP1 sets the value of channel Fork Task End Point. nRF52.
 func SetTEP1(c te.Chan, t *te.Task) {
 	storeTEP1(c, t)
 }

@@ -14,7 +14,10 @@ import (
 	"github.com/embeddedgo/nrf5/p/mmap"
 )
 
-const numChan = 20
+const (
+	numChan      = 20
+	numChanGroup = 6
+)
 
 type ppiRegs struct {
 	Regs
@@ -96,4 +99,3 @@ func setTaskChan(r *Task, c Chan, en bool) {
 		panic("PPI TEPs already in use")
 	}
 }
-
