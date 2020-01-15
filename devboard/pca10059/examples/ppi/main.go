@@ -10,19 +10,19 @@ import (
 	"github.com/embeddedgo/nrf5/devboard/pca10059/board/buttons"
 	"github.com/embeddedgo/nrf5/devboard/pca10059/board/leds"
 	"github.com/embeddedgo/nrf5/hal/gpiote"
-	"github.com/embeddedgo/nrf5/hal/ppi"
+	"github.com/embeddedgo/nrf5/hal/te"
 )
 
 func main() {
-	led := gpiote.ChanAlloc()
+	led := gpiote.AllocChan()
 	led.Setup(leds.User.Pin(), gpiote.ModeTask|gpiote.PolarityToggle)
 
-	btn := gpiote.ChanAlloc()
+	btn := gpiote.AllocChan()
 	btn.Setup(buttons.User.Pin(), gpiote.ModeEvent|gpiote.PolarityHiToLo)
 
-	btnled := ppi.ChanAlloc()
-	btnled.SetTEP(led.OUT().Task())
-	btnled.SetEEP(btn.IN().Event())
+	btnled := te.AllocChan()
+	led.OUT().Task().SetChan(btnled, true)
+	btn.IN().Event().SetChan(btnled, true)
 	btnled.Enable()
 
 	for {

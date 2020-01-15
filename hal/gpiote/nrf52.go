@@ -6,4 +6,4 @@
 
 package gpiote
 
-const chanNum = 8
+const numChan = 8

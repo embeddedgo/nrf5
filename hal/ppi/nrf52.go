@@ -6,4 +6,45 @@
 
 package ppi
 
-const groupNum = 6
+import (
+	"unsafe"
+
+	"github.com/embeddedgo/nrf5/hal/internal"
+	"github.com/embeddedgo/nrf5/hal/te"
+	"github.com/embeddedgo/nrf5/p/mmap"
+)
+
+const numGroup = 6
+
+type regs struct {
+	te.Regs
+	internal.PPI
+}
+
+func r() *regs {
+	return (*regs)(unsafe.Pointer(mmap.PPI_BASE))
+}
+
+func loadEEP(c te.Chan) *te.Event {
+	return (*te.Event)(unsafe.Pointer(uintptr(r().CH[c].EEP.Load())))
+}
+
+func storeEEP(c te.Chan, e *te.Event) {
+	r().CH[c].EEP.Store(uint32(uintptr(unsafe.Pointer(e))))
+}
+
+func loadTEP(c te.Chan) *te.Task {
+	return (*te.Task)(unsafe.Pointer(uintptr(r().CH[c].TEP.Load())))
+}
+
+func storeTEP(c te.Chan, t *te.Task) {
+	r().CH[c].TEP.Store(uint32(uintptr(unsafe.Pointer(t))))
+}
+
+func loadTEP1(c te.Chan) *te.Task {
+	return (*te.Task)(unsafe.Pointer(uintptr(r().FORK_TEP[c].Load())))
+}
+
+func storeTEP1(c te.Chan, t *te.Task) {
+	r().FORK_TEP[c].Store(uint32(uintptr(unsafe.Pointer(t))))
+}

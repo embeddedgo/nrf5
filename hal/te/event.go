@@ -11,19 +11,19 @@ import (
 )
 
 // Event represents a peripheral register that is used to record an occurence
-// of event.
+// of one kind of events.
 type Event struct {
 	u32 mmio.U32
 }
 
-// IsSet reports whether the event has been generated since the last clearing of
-// r. The unhandled event remains in active state as long as its software
-// handler (usually an interrupt handler) clears it.
+// IsSet reports whether any event has been generated since the last clearing
+// of r.
+// (usually an interrupt handler) clears it.
 func (r *Event) IsSet() bool {
 	return r.u32.Load() != 0
 }
 
-// Clear clears active event flag in r.
+// Clear clears the event flag in r
 func (r *Event) Clear() {
 	r.u32.Store(0)
 }
@@ -34,19 +34,19 @@ func regsMask(r *Event) (*Regs, uint32) {
 	return (*Regs)(unsafe.Pointer(addr &^ 0xFFF)), 1 << n
 }
 
-// IRQEnabled reports whether the event in active state generates interrupt.
+// IRQEnabled reports whether the events recorded in r generete interrupts.
 func (r *Event) IRQEnabled() bool {
 	rr, mask := regsMask(r)
 	return rr.intEnSet.Load()&mask != 0
 }
 
-// EnableIRQ enables generating of interrupt by the event in active state.
+// EnableIRQ enables generating of interrupt by events recorded in r.
 func (r *Event) EnableIRQ() {
 	rr, mask := regsMask(r)
 	rr.intEnSet.Store(mask)
 }
 
-// DisableIRQ disables generating of interrupt by event.
+// DisableIRQ disables generating of interrupts by events recorded in r.
 func (r *Event) DisableIRQ() {
 	rr, mask := regsMask(r)
 	rr.intEnClr.Store(mask)
@@ -71,9 +71,33 @@ func (r *Event) DisablePPI() {
 	rr.evtEnClr.Store(mask)
 }
 
-// IRQ returns NVIC IRQ number associated to peripheral.
+// IRQ returns NVIC IRQ number associated to the peripheral.
 func (r *Event) IRQ() rtos.IRQ {
 	rr, _ := regsMask(r)
 	return rr.IRQ()
 }
 
+// Chan returns the PPI/DPPI channel the event is connected to and reports
+// whether publishing events on this channel is enabled. In case of nRF52- which
+// PPI peripheral allows to connect event to multiple PPI channels Chan returns
+// the first channel found.
+func (r *Event) Chan() (c Chan, en bool) {
+	return getEventChan(r)
+}
+
+// SetChan connects the event to the PPI/DPPI channel. En allows to enable or
+// disable publishing events on connected channel.
+//
+// SetChan allows to write portable code that can work with PPI (nRF52-) and
+// DPPI (nRF53) but has some limitations in case of PPI:
+//
+// - you cannot connect multiple events to the same channel,
+//
+// - if en is false the channel is set to -1 which as a result disconnects the
+//   event from all channels.
+//
+// The one advantage of PPI over DPPI is ablility to conect one event to
+// multiple channels. If you need this feature use SetEEP from ppi package.
+func (r *Event) SetChan(c Chan, en bool) {
+	setEventChan(r, c, en)
+}

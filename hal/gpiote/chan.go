@@ -10,18 +10,18 @@ import (
 	"github.com/embeddedgo/nrf5/hal/te"
 )
 
-// ChanNum is the number of implemented GPIOTE channels (4 in case of nRF51, 8
+// NumChan is the number of implemented GPIOTE channels (4 in case of nRF51, 8
 // in case of nRF52).
-const ChanNum = chanNum
+const NumChan = numChan
 
 // Chan represents GPIOTE channel.
 type Chan int8
 
-var unusedChannels uint32 = 1<<chanNum - 1
+var unusedChannels uint32 = 1<<numChan - 1
 
-// ChanAlloc returns first unused GPIOTE channel. It returns negative number if
-// there is no free channels.
-func ChanAlloc() Chan {
+// AllocChan returns first unused GPIOTE channel. It returns negative number if
+// there are no free channels.
+func AllocChan() Chan {
 	return Chan(internal.BitAlloc(&unusedChannels))
 }
 

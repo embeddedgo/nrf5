@@ -9,14 +9,14 @@ import (
 	"github.com/embeddedgo/nrf5/hal/te"
 )
 
-// GroupNum is the number of implemented channel groups (4 in case of nRF51, 6
+// NumGroup is the number of implemented channel groups (4 in case of nRF51, 6
 // in case of nRF52).
-const GroupNum = groupNum
+const NumGroup = numGroup
 
 // Group repersents PPI channel group.
 type Group int8
 
-var unusedGroups uint32 = 1<<groupNum - 1
+var unusedGroups uint32 = 1<<numGroup - 1
 
 // GroupAlloc returns first unused PPI channel group. It returns negative number
 // if there is no free channel group.
@@ -30,13 +30,13 @@ func (g Group) Free() {
 }
 
 // Channels returns channels that belongs to the group g.
-func (g Group) Channels() Channels {
-	return Channels(r().chg[g].Load())
+func (g Group) Channels() te.Channels {
+	return te.Channels(r().CHG[g].Load())
 }
 
 // SetChannels sets channels that belongs to the group g.
-func (g Group) SetChannels(c Channels) {
-	r().chg[g].Store(uint32(c))
+func (g Group) SetChannels(c te.Channels) {
+	r().CHG[g].Store(uint32(c))
 }
 
 type Task uint8
