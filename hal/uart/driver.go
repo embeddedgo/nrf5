@@ -6,7 +6,6 @@ package uart
 
 import (
 	"embedded/rtos"
-	"runtime"
 	"sync/atomic"
 	"unsafe"
 
@@ -21,7 +20,7 @@ import (
 // no hardware error detection on writing). This driver treats all Rx hardware
 // errors as asynchronous events but at least the ErrOverrun is in fact
 // synchronous. So the Rx errors other than ErrTimeout are simply imformative
-// about the connection quallity or the reading performance. You can not
+// about the connection quallity or the reading performance. You cannot
 // determine which data has been affected (use other techniques to ensure data
 // integrity.
 //
@@ -43,7 +42,9 @@ type Driver struct {
 
 	// rx state
 	rxbuf    []byte
-	lastrw   uint32
+	nextr    uint32
+	nextw    uint32
+	rxcmd    uint32
 	rxready  rtos.Note
 	overflow bool
 
@@ -55,6 +56,12 @@ type Driver struct {
 	timeoutRx int64
 	timeoutTx int64
 }
+
+const (
+	cmdNone = iota
+	cmdWakeup
+	cmdStop
+)
 
 // NewDriver returns a new driver for p.
 func NewDriver(p *Periph) *Driver {
@@ -81,9 +88,8 @@ func (d *Driver) Disable() {
 // checking of an empty state. You can not rely on 6-byte hardware buffer as
 // extension of software buffer because for performance reasons the ISR do not
 // return until it reads all bytes from hardware. If the software buffer is full
-// the ISR simply drops read bytes until there is no more data to read. The
-// driver uses at most 65536 bytes of rxbuf. EnableRx panics if the receiving is
-// already enabled or rxbuf is too short.
+// the ISR simply drops read bytes until there is no more data to read.EnableRx
+// panics if the receiving is already enabled or rxbuf is too short.
 func (d *Driver) EnableRx(rxbuf []byte) {
 	if d.rxbuf != nil {
 		panic("enabled before")
@@ -91,29 +97,25 @@ func (d *Driver) EnableRx(rxbuf []byte) {
 	if len(rxbuf) < 2 {
 		panic("rxbuf too short")
 	}
-	if len(rxbuf) > 65536 {
-		rxbuf = rxbuf[:65536]
-	}
 	d.rxbuf = rxbuf
-	d.lastrw = 0
-	p := d.p
-	p.Event(RXDRDY).EnableIRQ()
-	p.Task(STARTRX).Trigger()
+	d.nextr = 0
+	d.nextw = 0
+	d.p.Event(RXDRDY).EnableIRQ()
+	d.p.Task(STARTRX).Trigger()
 }
 
 // DisableRx disables the UART receiver. The receive buffer is returned and no
-// longer used by driver allowing GC to collect its memory. You can use the
-// STOPRX and STARTRX tasks directly if you want to temporary disable the
-// receiver leaving the driver intact.
+// longer referenced by driver. You can use the STOPRX and STARTRX tasks
+// directly if you want to temporary disable the receiver leaving the driver
+// intact.
 func (d *Driver) DisableRx() (rxbuf []byte) {
-	p := d.p
-	rxto := p.Event(RXTO)
-	rxto.Clear()
-	p.Task(STOPRX).Trigger()
-	p.Event(RXDRDY).DisableIRQ()
-	for !rxto.IsSet() {
-		runtime.Gosched()
-	}
+	atomic.StoreUint32(&d.rxcmd, cmdStop)
+	d.p.Event(RXTO).Clear()
+	d.p.Event(RXTO).EnableIRQ()
+	d.p.Task(STOPRX).Trigger()
+	d.rxready.Sleep(-1)
+	d.p.Event(RXDRDY).DisableIRQ()
+	d.p.Event(RXTO).DisableIRQ()
 	rxbuf = d.rxbuf
 	d.rxbuf = nil
 	return
@@ -150,86 +152,62 @@ func (d *Driver) IRQ() rtos.IRQ {
 // ISR handles UART interrupts. It supports the reading thread to run in
 // parallel on another CPU.
 func (d *Driver) ISR() {
-	p := d.p
+	for d.p.Event(RXDRDY).IsSet() {
+		d.p.Event(RXDRDY).Clear()
+		nextw := d.nextw
 
-tryAgain:
-	rxwakeup := false
-	txwakeup := false
-	pollmore := false
+		// Read from hardware buffer even if there is no space in d.rxbuf. It
+		// simplifies the receiving code and makes it possible to distinguish
+		// between the EOVERRUN (interrupt handler too slow or interrup latency
+		// to high) and the ErrBufOverflow (reading goroutine too slow).
+		d.rxbuf[nextw] = d.p.LoadRXD()
 
-	// send next byte if the previous one was sent (little work so do it first)
-	if p.Event(TXDRDY).IsSet() {
-		p.Event(TXDRDY).Clear()
-		if n := d.txn + 1; n < len(d.txdata) {
-			d.txn = n
-			p.StoreTXD(d.txdata[n])
-			pollmore = true
+		if nextw++; int(nextw) == len(d.rxbuf) {
+			nextw = 0
+		}
+		if nextw != atomic.LoadUint32(&d.nextr) {
+			atomic.StoreUint32(&d.nextw, nextw)
+			if atomic.CompareAndSwapUint32(&d.rxcmd, cmdWakeup, cmdNone) {
+				d.rxready.Wakeup()
+			}
 		} else {
-			// txdone.Wakeup takes a lot of time so defer it after receive
-			txwakeup = true
+			d.overflow = true
 		}
 	}
 
-	// Empty the hardware buffer even if there is no space in rxbuf. It
-	// simplifies and speeds up the receiving code and makes it possible to
-	// distinguish between the hardware buffer overrun (interrupt latency too
-	// high) and the software buffer overlow (the reading goroutine too slow).
-	if rxrdy := p.Event(RXDRDY).IsSet(); rxrdy {
-		lastrw := atomic.LoadUint32(&d.lastrw)
-		lastr, lastw := lastrw>>16, lastrw&0xFFFF
-		rxwakeup = (lastr == lastw) // reader can sleep on empty rxbuf
-		for rxrdy {
-			p.Event(RXDRDY).Clear()
-			b := p.LoadRXD()
-			nextw := lastw + 1
-			if int(nextw) == len(d.rxbuf) {
-				nextw = 0
-			}
-			if nextw != lastr {
-				d.rxbuf[nextw] = b
-				lastw = nextw
-			} else {
-				d.overflow = true
-			}
-			rxrdy = p.Event(RXDRDY).IsSet()
+	if d.p.Event(TXDRDY).IsSet() {
+		d.p.Event(TXDRDY).Clear()
+		if n := d.txn; n < len(d.txdata) {
+			d.p.StoreTXD(d.txdata[n])
+			d.txn = n + 1
+		} else {
+			d.txdone.Wakeup()
 		}
-		for !atomic.CompareAndSwapUint32(&d.lastrw, lastrw, lastr<<16|lastw) {
-			// in the meantime the rxbuf was read (multicore system)
-			lastrw = atomic.LoadUint32(&d.lastrw)
-			lastr = lastrw >> 16
-			rxwakeup = (lastr == lastrw&0xFFFF)
-		}
-		pollmore = true
 	}
 
-	if txwakeup {
-		d.txdone.Wakeup()
-	}
-	if rxwakeup {
-		d.rxready.Wakeup()
-	}
-	if pollmore {
-		// Avoid expensive Go ISR exit/enter code in case of high baudrates.
-		// In case of nRF52+mbr+softdevice(off) useful for baudrates >= 921600.
-		goto tryAgain
+	if d.p.Event(RXTO).IsSet() {
+		d.p.Event(RXTO).Clear()
+		if atomic.CompareAndSwapUint32(&d.rxcmd, cmdStop, cmdNone) {
+			d.rxready.Wakeup()
+		}
 	}
 }
 
 // WriteByte sends one byte to the remote party and returns an error if detected// WriteByte can block if the hardware flow control is used. It does not provide
 // any guarantee that the byte sent was received by the remote party.
 func (d *Driver) WriteByte(b byte) (err error) {
+	d.txn = 1
 	d.txdone.Clear()
-	p := d.p
-	p.Event(TXDRDY).EnableIRQ()
-	p.Task(STARTTX).Trigger()
-	p.StoreTXD(b)
+	d.p.Task(STARTTX).Trigger()
+	d.p.StoreTXD(b)
+	d.p.Event(TXDRDY).EnableIRQ()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	p.Task(STOPTX).Trigger()
-	p.Event(TXDRDY).DisableIRQ()
-	p.Event(TXDRDY).Clear()
-	return
+	d.p.Task(STOPTX).Trigger()
+	d.p.Event(TXDRDY).DisableIRQ()
+	d.p.Event(TXDRDY).Clear()
+	return // BUG: the ISR can still run in case of multicore system
 }
 
 // WriteString works like Write.
@@ -238,19 +216,20 @@ func (d *Driver) WriteString(s string) (n int, err error) {
 		return 0, nil
 	}
 	d.txdata = s
-	d.txn = 0
+	d.txn = 1
 	d.txdone.Clear()
-	p := d.p
-	p.Event(TXDRDY).EnableIRQ()
-	p.Task(STARTTX).Trigger()
-	p.StoreTXD(s[0])
+	d.p.Task(STARTTX).Trigger()
+	d.p.StoreTXD(s[0])
+	d.p.Event(TXDRDY).EnableIRQ()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	p.Task(STOPTX).Trigger()
-	p.Event(TXDRDY).DisableIRQ()
-	p.Event(TXDRDY).Clear()
-	return d.txn, err
+	d.p.Task(STOPTX).Trigger()
+	d.p.Event(TXDRDY).DisableIRQ()
+	d.p.Event(TXDRDY).Clear()
+	d.txdata = ""
+	return d.txn, err // BUG: the ISR can still run in case of multicore system
+
 }
 
 // Write sends bytes from p to the remote party. It return the number of bytes
@@ -262,40 +241,45 @@ func (d *Driver) Write(p []byte) (int, error) {
 
 // Len returns the number of bytes that are ready to read from Rx buffer.
 func (d *Driver) Len() int {
-	lastrw := atomic.LoadUint32(&d.lastrw)
-	n := int(lastrw&0xFFFF) - int(lastrw>>16)
+	n := int(atomic.LoadUint32(&d.nextw)) - int(d.nextr)
 	if n < 0 {
 		n += len(d.rxbuf)
 	}
 	return n
 }
 
-func (d *Driver) waitRxData() (lastr, lastw int) {
-	lastrw := atomic.LoadUint32(&d.lastrw)
-	lastr, lastw = int(lastrw>>16), int(lastrw&0xFFFF)
-	if lastr != lastw || !d.rxready.Sleep(d.timeoutRx) {
-		return
+func (d *Driver) waitRxData() int {
+	nextw := atomic.LoadUint32(&d.nextw)
+	if nextw != d.nextr {
+		return int(nextw)
 	}
-	lastrw = atomic.LoadUint32(&d.lastrw)
-	lastr, lastw = int(lastrw>>16), int(lastrw&0xFFFF)
-	if lastr != lastw {
-		return
+	d.rxready.Clear()
+	atomic.StoreUint32(&d.rxcmd, cmdWakeup)
+	nextw = atomic.LoadUint32(&d.nextw)
+	if nextw != d.nextr {
+		if atomic.SwapUint32(&d.rxcmd, cmdNone) == cmdNone {
+			d.rxready.Sleep(-1) // wait for the upcoming wake up
+		}
+		return int(nextw)
+	}
+	if !d.rxready.Sleep(d.timeoutRx) {
+		if atomic.SwapUint32(&d.rxcmd, cmdNone) != cmdNone {
+			return int(nextw)
+		}
+		d.rxready.Sleep(-1) // wait for the upcoming wake up
+	}
+	nextw = atomic.LoadUint32(&d.nextw)
+	if nextw != d.nextr {
+		return int(nextw)
 	}
 	panic("wakeup on empty buffer")
 }
 
-func (d *Driver) markDataRead(lastr int) error {
-	ulastr := uint32(lastr)
-	for {
-		lastrw := atomic.LoadUint32(&d.lastrw)
-		lastw := lastrw & 0xFFFF
-		if lastw == ulastr {
-			d.rxready.Clear()
-		}
-		if atomic.CompareAndSwapUint32(&d.lastrw, lastrw, ulastr<<16|lastw) {
-			break
-		}
+func (d *Driver) markDataRead(nextr int) error {
+	if nextr >= len(d.rxbuf) {
+		nextr -= len(d.rxbuf)
 	}
+	atomic.StoreUint32(&d.nextr, uint32(nextr))
 	if d.overflow {
 		d.overflow = false
 		return ErrBufOverflow
@@ -310,14 +294,12 @@ func (d *Driver) markDataRead(lastr int) error {
 // ReadByte reads one byte and returns error if detected. ReadByte blocks only
 // if the internal buffer is empty (d.Len() > 0 ensure non-blocking read).
 func (d *Driver) ReadByte() (b byte, err error) {
-	lastr, lastw := d.waitRxData()
-	if lastr == lastw {
+	nextw := d.waitRxData()
+	nextr := int(d.nextr)
+	if nextw == nextr {
 		return 0, ErrTimeout
 	}
-	if lastr++; lastr == len(d.rxbuf) {
-		lastr = 0
-	}
-	return d.rxbuf[lastr], d.markDataRead(lastr)
+	return d.rxbuf[nextr], d.markDataRead(nextr + 1)
 }
 
 // Read reads up to len(p) bytes into p. It returns number of bytes read and an
@@ -327,27 +309,20 @@ func (d *Driver) Read(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
-	lastr, lastw := d.waitRxData()
-	if lastr == lastw {
+	nextw := d.waitRxData()
+	nextr := int(d.nextr)
+	if nextw == nextr {
 		return 0, ErrTimeout
 	}
-	nextr := lastr + 1
-	if nextr == len(d.rxbuf) {
-		nextr = 0
-	}
-	if nextr <= lastw {
-		n = copy(p, d.rxbuf[nextr:lastw+1])
+	if nextr <= nextw {
+		n = copy(p, d.rxbuf[nextr:nextw])
 	} else {
 		n = copy(p, d.rxbuf[nextr:])
 		if n < len(p) {
-			n += copy(p[n:], d.rxbuf[:lastw+1])
+			n += copy(p[n:], d.rxbuf[:nextw])
 		}
 	}
-	lastr += n
-	if lastr >= len(d.rxbuf) {
-		lastr -= len(d.rxbuf)
-	}
-	return n, d.markDataRead(lastr)
+	return n, d.markDataRead(nextr + n)
 }
 
 // SetReadTimeout sets the read timeout used by Read* functions.

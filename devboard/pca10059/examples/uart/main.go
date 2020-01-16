@@ -25,6 +25,8 @@ func main() {
 	tts.Enable()
 	tts.EnableRx(make([]byte, 128))
 
+	tts.WriteString("Ready!\r\n")
+
 	buf := make([]byte, 64)
 	for {
 		n, err := tts.Read(buf)
