@@ -1,0 +1,53 @@
+// Code generated from ../nordic/s140/headers/ble_ranges.h; DO NOT EDIT.
+
+package ble
+
+const SVC_BASE = 0x60       // Common BLE SVC base.
+const SVC_LAST = 0x6B       // Common BLE SVC last.
+const GAP_SVC_BASE = 0x6C   // GAP BLE SVC base.
+const GAP_SVC_LAST = 0x9A   // GAP BLE SVC last.
+const GATTC_SVC_BASE = 0x9B // GATTC BLE SVC base.
+const GATTC_SVC_LAST = 0xA7 // GATTC BLE SVC last.
+const GATTS_SVC_BASE = 0xA8 // GATTS BLE SVC base.
+const GATTS_SVC_LAST = 0xB7 // GATTS BLE SVC last.
+const L2CAP_SVC_BASE = 0xB8 // L2CAP BLE SVC base.
+const L2CAP_SVC_LAST = 0xBF // L2CAP BLE SVC last.
+const EVT_INVALID = 0x00    // Invalid BLE Event.
+const EVT_BASE = 0x01       // Common BLE Event base.
+const EVT_LAST = 0x0F       // Common BLE Event last.
+const GAP_EVT_BASE = 0x10   // GAP BLE Event base.
+const GAP_EVT_LAST = 0x2F   // GAP BLE Event last.
+const GATTC_EVT_BASE = 0x30 // GATTC BLE Event base.
+const GATTC_EVT_LAST = 0x4F // GATTC BLE Event last.
+const GATTS_EVT_BASE = 0x50 // GATTS BLE Event base.
+const GATTS_EVT_LAST = 0x6F // GATTS BLE Event last.
+const L2CAP_EVT_BASE = 0x70 // L2CAP BLE Event base.
+const L2CAP_EVT_LAST = 0x8F // L2CAP BLE Event last.
+const OPT_INVALID = 0x00    // Invalid BLE Option.
+const OPT_BASE = 0x01       // Common BLE Option base.
+const OPT_LAST = 0x1F       // Common BLE Option last.
+const GAP_OPT_BASE = 0x20   // GAP BLE Option base.
+const GAP_OPT_LAST = 0x3F   // GAP BLE Option last.
+const GATT_OPT_BASE = 0x40  // GATT BLE Option base.
+const GATT_OPT_LAST = 0x5F  // GATT BLE Option last.
+const GATTC_OPT_BASE = 0x60 // GATTC BLE Option base.
+const GATTC_OPT_LAST = 0x7F // GATTC BLE Option last.
+const GATTS_OPT_BASE = 0x80 // GATTS BLE Option base.
+const GATTS_OPT_LAST = 0x9F // GATTS BLE Option last.
+const L2CAP_OPT_BASE = 0xA0 // L2CAP BLE Option base.
+const L2CAP_OPT_LAST = 0xBF // L2CAP BLE Option last.
+const CFG_INVALID = 0x00    // Invalid BLE configuration.
+const CFG_BASE = 0x01       // Common BLE configuration base.
+const CFG_LAST = 0x1F       // Common BLE configuration last.
+const CONN_CFG_BASE = 0x20  // BLE connection configuration base.
+const CONN_CFG_LAST = 0x3F  // BLE connection configuration last.
+const GAP_CFG_BASE = 0x40   // GAP BLE configuration base.
+const GAP_CFG_LAST = 0x5F   // GAP BLE configuration last.
+const GATT_CFG_BASE = 0x60  // GATT BLE configuration base.
+const GATT_CFG_LAST = 0x7F  // GATT BLE configuration last.
+const GATTC_CFG_BASE = 0x80 // GATTC BLE configuration base.
+const GATTC_CFG_LAST = 0x9F // GATTC BLE configuration last.
+const GATTS_CFG_BASE = 0xA0 // GATTS BLE configuration base.
+const GATTS_CFG_LAST = 0xBF // GATTS BLE configuration last.
+const L2CAP_CFG_BASE = 0xC0 // L2CAP BLE configuration base.
+const L2CAP_CFG_LAST = 0xDF // L2CAP BLE configuration last.
