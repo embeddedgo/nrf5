@@ -171,7 +171,13 @@ func main() {
 				btn = b
 				if connHandle != ble.ConnInvalid {
 					_, err := gatts.HVX(connHandle, &btnParams, byte(b))
-					dieErr(err)
+					if err != nil {
+						if err == gatts.ErrSysAttrMissing {
+							println(err.Error())
+						} else {
+							dieErr(err)
+						}
+					}
 				}
 			}
 			statusLED.Set(statusLED.Get() + 1)
