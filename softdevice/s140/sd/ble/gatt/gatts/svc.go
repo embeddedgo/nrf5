@@ -15,3 +15,9 @@ func addCharacteristic(service_handle Handle, char_md *CharMeta, attr_char_value
 
 //go:noescape
 func hvx(conn_handle ble.Handle, hvx_params *hvxParams) uint32
+
+//go:noescape
+func setSysAttr(conn_handle ble.Handle, sys_attr_data *uint8, len uint16, flags SysAttrFlags) uint32
+
+//go:noescape
+func getSysAttr(conn_handle ble.Handle, sys_attr_data *uint8, len *uint16, flags SysAttrFlags) uint32

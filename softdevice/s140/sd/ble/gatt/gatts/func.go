@@ -39,3 +39,31 @@ func HVX(connHandle ble.Handle, params *HVXParams, data ...byte) (int, error) {
 	e := hvx(connHandle, &p)
 	return int(n), mkerr(e)
 }
+
+type SysAttrFlags uint32
+
+const (
+	SysAttrSys SysAttrFlags = 1 << 0 // restrict system attributes to system services
+	SysAttrUsr SysAttrFlags = 1 << 1 // restrict system attributes to user services
+)
+
+// SetSysAttr sets the persistent system attributes for a connection.
+func SetSysAttr(connHandle ble.Handle, data []byte, flags SysAttrFlags) error {
+	var p *byte
+	if len(data) != 0 {
+		p = &data[0]
+	}
+	return mkerr(setSysAttr(connHandle, p, uint16(len(data)), flags))
+}
+
+// GetSysAttr retrieves the persistent system attributes.
+func GetSysAttr(connHandle ble.Handle, data []byte, flags SysAttrFlags) (int, error) {
+	var p *byte
+	var n uint16
+	if len(data) != 0 {
+		p = &data[0]
+		n = uint16(len(data))
+	}
+	e := getSysAttr(connHandle, p, &n, flags)
+	return int(n), mkerr(e)
+}
