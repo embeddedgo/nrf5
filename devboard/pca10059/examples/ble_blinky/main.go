@@ -187,7 +187,7 @@ func main() {
 			evt, err := sdutil.NextEvent()
 			if err != nil {
 				if err != sd.ErrNotFound {
-					checkStatus(err)
+					dieErr(err)
 				}
 				break
 			}
