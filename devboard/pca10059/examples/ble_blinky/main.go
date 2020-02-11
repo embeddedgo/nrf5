@@ -39,16 +39,16 @@ func main() {
 	// enable SoftDevice event interrupt
 	irq.SWI2_EGU2.Enable(rtos.IntPrioLowest)
 
-	ramBase := sdutil.AppRAMBase()
+	appBase := sdutil.AppRAMBase()
 
 	print("- configure connection count: ")
 
 	connCfg := gap.ConnCfg{
 		Tag:         1,
 		ConnCount:   1,
-		EventLength: 6,
+		EventLength: 6, // in 1.25 ms units
 	}
-	checkStatus(gap.SetConnCfg(&connCfg, ramBase))
+	checkStatus(gap.SetConnCfg(&connCfg, appBase))
 
 	print("- configure role count: ")
 
@@ -56,15 +56,15 @@ func main() {
 		AdvSetCount:     1,
 		PeriphRoleCount: 1,
 	}
-	checkStatus(gap.SetRoleCountCfg(&roleCntCfg, ramBase))
+	checkStatus(gap.SetRoleCountCfg(&roleCntCfg, appBase))
 
 	print("- enable BLE stack: ")
 
-	minBase, err := ble.Enable(ramBase)
+	minBase, err := ble.Enable(appBase)
 	status(err)
 	ramStart := uintptr(0x2000_0000)
 	print("- softdevice RAM: required=", minBase-ramStart, ", reserved=",
-		ramBase-ramStart, "\n")
+		appBase-ramStart, "\n")
 	if err != nil {
 		blink(leds.Red)
 	}
