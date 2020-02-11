@@ -165,18 +165,17 @@ func main() {
 	btn := buttons.User.Read()
 	btnParams := gatts.HVXParams{btnHandles.Value, gatt.Notification, 0, 1}
 	connHandle := ble.ConnInvalid
+
 	for {
 		if !newEvent.Sleep(250e6) {
 			if b := buttons.User.Read(); b != btn {
 				btn = b
 				if connHandle != ble.ConnInvalid {
 					_, err := gatts.HVX(connHandle, &btnParams, byte(b))
-					if err != nil {
-						if err == gatts.ErrSysAttrMissing {
-							println(err.Error())
-						} else {
-							dieErr(err)
-						}
+					if err == gatts.ErrSysAttrMissing {
+						println(err.Error())
+					} else {
+						dieErr(err)
 					}
 				}
 			}
