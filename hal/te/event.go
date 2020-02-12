@@ -18,7 +18,6 @@ type Event struct {
 
 // IsSet reports whether any event has been generated since the last clearing
 // of r.
-// (usually an interrupt handler) clears it.
 func (r *Event) IsSet() bool {
 	return r.u32.Load() != 0
 }
@@ -59,13 +58,13 @@ func (r *Event) PPIEnabled() bool {
 	return rr.evtEnSet.Load()&mask != 0
 }
 
-// EnablePPI enables routing event to PPI. Only RTC supports this method.
+// EnablePPI enables routing the event to PPI. Only RTC supports this method.
 func (r *Event) EnablePPI() {
 	rr, mask := regsMask(r)
 	rr.evtEnSet.Store(mask)
 }
 
-// DisablePPI disable routing event to PPI. Only RTC supports this method.
+// DisablePPI disable routing the event to PPI. Only RTC supports this method.
 func (r *Event) DisablePPI() {
 	rr, mask := regsMask(r)
 	rr.evtEnClr.Store(mask)
@@ -79,8 +78,8 @@ func (r *Event) IRQ() rtos.IRQ {
 
 // Chan returns the PPI/DPPI channel the event is connected to and reports
 // whether publishing events on this channel is enabled. In case of nRF52- which
-// PPI peripheral allows to connect event to multiple PPI channels Chan returns
-// the first channel found.
+// PPI peripheral allows to connect one event to multiple PPI channels Chan
+// returns the first channel found.
 func (r *Event) Chan() (c Chan, en bool) {
 	return getEventChan(r)
 }
@@ -91,12 +90,12 @@ func (r *Event) Chan() (c Chan, en bool) {
 // SetChan allows to write portable code that can work with PPI (nRF52-) and
 // DPPI (nRF53) but has some limitations in case of PPI:
 //
-// - you cannot connect multiple events to the same channel,
+// - you cannot connect one event to multiple channels,
 //
 // - if en is false the channel is set to -1 which as a result disconnects the
 //   event from all channels.
 //
-// The one advantage of PPI over DPPI is ablility to conect one event to
+// The one advantage of PPI over DPPI is its ablility to conect one event to
 // multiple channels. If you need this feature use SetEEP from ppi package.
 func (r *Event) SetChan(c Chan, en bool) {
 	setEventChan(r, c, en)
