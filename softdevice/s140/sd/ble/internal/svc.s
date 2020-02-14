@@ -1,7 +1,10 @@
 // Copyright 2020 Michal Derkacz.
 
-#include "../svc.h"
 #include "textflag.h"
+
+#define SVC_BASE 0x60
+
+#define CFG_SET (SVC_BASE + 9)
 
 TEXT ·SetCfg(SB),NOSPLIT|NOFRAME,$0
 	MOVW  cfg_id+0(FP), R0
