@@ -6,6 +6,7 @@ package uarte
 
 import (
 	"embedded/rtos"
+	"time"
 	"unsafe"
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
@@ -17,8 +18,8 @@ type Driver struct {
 	// tx state
 	txdone rtos.Note
 
-	timeoutRx int64
-	timeoutTx int64
+	timeoutRx time.Duration
+	timeoutTx time.Duration
 }
 
 // NewDriver returns a new driver for p.

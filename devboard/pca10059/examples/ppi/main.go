@@ -5,7 +5,7 @@
 package main
 
 import (
-	"embedded/rtos"
+	"time"
 
 	"github.com/embeddedgo/nrf5/devboard/pca10059/board/buttons"
 	"github.com/embeddedgo/nrf5/devboard/pca10059/board/leds"
@@ -28,14 +28,14 @@ func main() {
 	for {
 		leds.Blue.SetOff()
 		leds.Red.SetOn()
-		rtos.Nanosleep(500e6)
+		time.Sleep(500 * time.Millisecond)
 
 		leds.Red.SetOff()
 		leds.Green.SetOn()
-		rtos.Nanosleep(500e6)
+		time.Sleep(500 * time.Millisecond)
 
 		leds.Green.SetOff()
 		leds.Blue.SetOn()
-		rtos.Nanosleep(500e6)
+		time.Sleep(500 * time.Millisecond)
 	}
 }

@@ -6,7 +6,7 @@
 package main
 
 import (
-	"embedded/rtos"
+	"time"
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/uarte"
@@ -30,6 +30,6 @@ func main() {
 		tts.Write([]byte("Hello World!"))
 		tts.WriteByte('\n')
 		tts.WriteByte('\r')
-		rtos.Nanosleep(1e9)
+		time.Sleep(time.Second)
 	}
 }

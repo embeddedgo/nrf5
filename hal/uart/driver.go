@@ -7,6 +7,7 @@ package uart
 import (
 	"embedded/rtos"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/embeddedgo/nrf5/hal/gpio"
@@ -53,8 +54,8 @@ type Driver struct {
 	txn    int
 	txdone rtos.Note
 
-	timeoutRx int64
-	timeoutTx int64
+	timeoutRx time.Duration
+	timeoutTx time.Duration
 }
 
 const (
@@ -326,13 +327,13 @@ func (d *Driver) Read(p []byte) (n int, err error) {
 }
 
 // SetReadTimeout sets the read timeout used by Read* functions.
-func (d *Driver) SetReadTimeout(ns int64) {
-	d.timeoutRx = ns
+func (d *Driver) SetReadTimeout(timeout time.Duration) {
+	d.timeoutRx = timeout
 }
 
 // SetWriteTimeout sets the write timeout used by Write* functions.
-func (d *Driver) SetWriteTimeout(ns int64) {
-	d.timeoutTx = ns
+func (d *Driver) SetWriteTimeout(timeout time.Duration) {
+	d.timeoutTx = timeout
 }
 
 type DriverError uint8

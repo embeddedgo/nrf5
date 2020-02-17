@@ -6,6 +6,7 @@ package main
 
 import (
 	"embedded/rtos"
+	"time"
 
 	"github.com/embeddedgo/nrf5/hal/clock"
 	"github.com/embeddedgo/nrf5/hal/irq"
@@ -167,7 +168,7 @@ func main() {
 	connHandle := ble.ConnInvalid
 
 	for {
-		if !newEvent.Sleep(250e6) {
+		if !newEvent.Sleep(250 * time.Millisecond) {
 			if b := buttons.User.Read(); b != btn {
 				btn = b
 				if connHandle != ble.ConnInvalid {
@@ -233,9 +234,9 @@ func sdFaultHandler(id, pc, info uint32) {
 func blink(led leds.LED) {
 	for {
 		led.SetOn()
-		rtos.Nanosleep(50e6)
+		time.Sleep(50 * time.Millisecond)
 		led.SetOff()
-		rtos.Nanosleep(950e6)
+		time.Sleep(950 * time.Millisecond)
 	}
 }
 
