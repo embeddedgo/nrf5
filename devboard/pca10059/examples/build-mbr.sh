@@ -3,7 +3,6 @@
 GOTARGET=nrf52840
 GOTEXT=0x00001000
 GOMEM=0x20000008:262136
-IRQNAMES=../../../../hal/irq
 OUT=hex
 
 . ../../../../../scripts/build.sh $@
