@@ -1,10 +1,8 @@
 ## Support for nRF5 development boards
 
-### The idea
+### Directory structure
 
-The idea is to simplify the use of nRF5 development boards.
-
-Every development board directory contains set of packages (in *board* subdirectory) that provides the interface to the peripherals available on the board (for now the support is modest: only LEDs and buttons). The provided interface tries to be simple and uniform accros all development boards with the same or similar peripherals.
+Every board directory contains a set of packages (in *board* subdirectory) that provides the interface to the peripherals available on the board (for now the support is modest: only LEDs and buttons).
 
 The board/init package, when imported, configures the whole system for typical usage. If you use any other package from *board* directory the board/init package is imported implicitly to ensure the board is properly configured.
 
