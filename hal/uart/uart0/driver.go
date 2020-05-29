@@ -17,7 +17,7 @@ var driver *uart.Driver
 func Driver() *uart.Driver {
 	if driver == nil {
 		driver = uart.NewDriver(uart.UART(0))
-		driver.IRQ().Enable(rtos.IntPrioLow)
+		driver.IRQ().Enable(rtos.IntPrioLow, -1)
 	}
 	return driver
 }

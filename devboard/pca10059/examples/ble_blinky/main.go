@@ -38,7 +38,7 @@ func main() {
 	checkStatus(sdm.EnableSoftdevice(&lfclkc, sdFaultHandler))
 
 	// enable SoftDevice event interrupt
-	irq.SWI2_EGU2.Enable(rtos.IntPrioLowest)
+	irq.SWI2_EGU2.Enable(rtos.IntPrioLowest, -1)
 
 	appBase := sdutil.AppRAMBase()
 
