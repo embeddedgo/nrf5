@@ -2,3 +2,4 @@
 *.bin
 devboard/*/examples/*/*.hex
 zisrnames.go
+core
