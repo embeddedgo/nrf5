@@ -87,10 +87,10 @@ func (d *Driver) Disable() {
 // received data. At least 2-byte buffer is required, which is effectively one
 // byte buffer because the other byte always remains unused for efficient
 // checking of an empty state. You can not rely on 6-byte hardware buffer as
-// extension of software buffer because for performance reasons the ISR do not
-// return until it reads all bytes from hardware. If the software buffer is full
-// the ISR simply drops read bytes until there is no more data to read.EnableRx
-// panics if the receiving is already enabled or rxbuf is too short.
+// extension of software buffer because for the performance reasons the ISR do
+// not return until it reads all bytes from hardware. If the software buffer is
+// full the ISR simply drops read bytes until there is no more data to read.
+// EnableRx panics if the receiving is already enabled or rxbuf is too short.
 func (d *Driver) EnableRx(rxbuf []byte) {
 	if d.rxbuf != nil {
 		panic("enabled before")
@@ -208,7 +208,7 @@ func (d *Driver) WriteByte(b byte) (err error) {
 	d.p.Task(STOPTX).Trigger()
 	d.p.Event(TXDRDY).DisableIRQ()
 	d.p.Event(TXDRDY).Clear()
-	return // BUG: the ISR can still run in case of multicore system
+	return // BUG: in case of timeout the ISR can still run in multicore system
 }
 
 // WriteString works like Write.
@@ -229,7 +229,7 @@ func (d *Driver) WriteString(s string) (n int, err error) {
 	d.p.Event(TXDRDY).DisableIRQ()
 	d.p.Event(TXDRDY).Clear()
 	d.txdata = ""
-	return d.txn, err // BUG: the ISR can still run in case of multicore system
+	return d.txn, err // BUG: in case of timeout the ISR can still run in multicore system
 
 }
 
