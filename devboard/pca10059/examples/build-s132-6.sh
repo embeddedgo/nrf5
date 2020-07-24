@@ -3,7 +3,7 @@
 GOTARGET=nrf52840
 GOTEXT=0x00026000
 GOMEM=0x20002000:253952
-OUT=hex
+GOOUT=hex
 
 . ../../../../../scripts/build.sh $@
 
