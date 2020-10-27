@@ -70,14 +70,18 @@ func ticks(ch, cl uint32) int64 {
 	return int64(ch)<<24 | int64(cl)
 }
 
-func setAlarm(ns int64) bool {
+func setAlarm(ns int64) {
+	cce := cce()
+	if ns < 0 {
+		cce.DisableIRQ()
+		return
+	}
 	if g.wakens == ns {
-		return true
+		return
 	}
 	g.wakens = ns
 	scale := int64(g.scale)
 	wkup := (ns<<(15-9) + scale - 1) / scale // round up, don't wake too early
-	cce := cce()
 	cce.Clear()
 	ch, cl := counters()
 	now := ticks(ch, cl)
@@ -91,11 +95,11 @@ func setAlarm(ns int64) bool {
 	}
 	if now < wkup {
 		cce.EnableIRQ()
-		return true
+	} else {
+		// wkup in the past or there is a chance that CC was set to late.
+		g.wakens = 0
+		schedule()
 	}
-	// wkup in the past or there is a chance that CC was set to late.
-	g.wakens = 0
-	return false
 }
 
 func ISR() {
