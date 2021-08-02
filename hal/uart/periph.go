@@ -119,15 +119,15 @@ func (p *Periph) ClearERRORSRC(e ErrorBits) {
 
 // LoadENABLE reports whether the UART peripheral is enabled.
 func (p *Periph) LoadENABLE() bool {
-	return p.enable.Load()&4 != 0
+	return p.enable.Load() == 4
 }
 
 // StoreENABLE enables or disables UART peripheral.
 func (p *Periph) StoreENABLE(en bool) {
-	p.enable.Store(4 * internal.Bool2uint32(en))
+	p.enable.Store(4 * internal.BoolToUint32(en))
 }
 
-type Signal byte
+type Signal uint8
 
 const (
 	RTSn Signal = 0

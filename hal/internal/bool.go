@@ -6,4 +6,4 @@ package internal
 
 import "unsafe"
 
-func Bool2uint32(x bool) uint32 { return uint32(uint8(*(*uint8)(unsafe.Pointer(&x)))) }
+func BoolToUint32(x bool) uint32 { return uint32(uint8(*(*uint8)(unsafe.Pointer(&x)))) }

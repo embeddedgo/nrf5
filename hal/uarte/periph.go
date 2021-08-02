@@ -133,15 +133,15 @@ func (p *Periph) ClearERRORSRC(e ErrorBits) {
 
 // LoadENABLE reports whether the UART peripheral is enabled.
 func (p *Periph) LoadENABLE() bool {
-	return p.enable.Load()&8 != 0
+	return p.enable.Load() == 8
 }
 
 // StoreENABLE enables or disables UART peripheral.
 func (p *Periph) StoreENABLE(en bool) {
-	p.enable.Store(8 * internal.Bool2uint32(en))
+	p.enable.Store(8 * internal.BoolToUint32(en))
 }
 
-type Signal byte
+type Signal uint8
 
 const (
 	RTSn Signal = 0
@@ -180,7 +180,7 @@ func (p *Periph) StoreRXDMAXCNT(n int) {
 	p.rxdmaxcnt.Store(uint32(n))
 }
 
-// LoadRXDAMOUNT returns the Number of bytes transferred in the last transaction
+// LoadRXDAMOUNT returns the Number of bytes transferred in the last Rx transaction
 func (p *Periph) LoadRXDAMOUNT() int {
 	return int(p.rxdamount.Load())
 }
@@ -200,12 +200,12 @@ func (p *Periph) LoadTXDMAXCNT() int {
 	return int(p.txdmaxcnt.Load())
 }
 
-// StoreTXDMAXCNT sets the maximum number of bytes in receive buffer.
+// StoreTXDMAXCNT sets the maximum number of bytes in transmit buffer.
 func (p *Periph) StoreTXDMAXCNT(n int) {
 	p.txdmaxcnt.Store(uint32(n))
 }
 
-// LoadTXDAMOUNT returns the number of bytes transferred in the last transaction
+// LoadTXDAMOUNT returns the number of bytes transferred in the last Tx transaction
 func (p *Periph) LoadTXDAMOUNT() int {
 	return int(p.txdamount.Load())
 }

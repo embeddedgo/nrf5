@@ -24,7 +24,6 @@ type Driver struct {
 
 // NewDriver returns a new driver for p.
 func NewDriver(p *Periph) *Driver {
-	p.EnableIRQ(1 << ENDTX)
 	return &Driver{p: p, timeoutRx: -1, timeoutTx: -1}
 }
 
@@ -34,11 +33,15 @@ func (d *Driver) Periph() *Periph {
 
 // Enable enables UART peripheral.
 func (d *Driver) Enable() {
-	d.p.StoreENABLE(true)
+	p := d.p
+	p.StoreENABLE(true)
+	p.Event(ENDTX).Clear()
+	p.EnableIRQ(1 << ENDTX)
 }
 
 // Disable disables UART peripheral.
 func (d *Driver) Disable() {
+	d.p.DisableIRQ(1 << ENDTX)
 	d.p.StoreENABLE(false)
 }
 
