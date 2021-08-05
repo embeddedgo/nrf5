@@ -1,5 +1,9 @@
 module github.com/embeddedgo/nrf5
 
-go 1.13
+go 1.15
 
-require github.com/embeddedgo/x v0.0.5
+replace github.com/embeddedgo/display => ../display
+
+require (
+	github.com/embeddedgo/display v0.1.9
+)
