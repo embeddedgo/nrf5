@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo 'For nRF52840 use load-nrfutil-s140-*'
+exit 1
+
 dfu=usb-serial
 port=/dev/ttyACM0
 
