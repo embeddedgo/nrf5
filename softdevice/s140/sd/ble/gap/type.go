@@ -317,3 +317,9 @@ type DataLengthParams struct {
 	MaxTxTimeUs uint16
 	MaxRxTimeUs uint16
 }
+
+type DataLengthLimitation struct {
+	TxPayloadLimitedOctets uint16 // If > 0, the requested TX packet length is too long by this many octets.
+	RxPayloadLimitedOctets uint16 // If > 0, the requested RX packet length is too long by this many octets.
+	TxRxTimeLimitedUs      uint16 // If > 0, the requested combination of TX and RX packet lengths is too long by this many microseconds.
+}

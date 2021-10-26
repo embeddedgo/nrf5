@@ -22,3 +22,6 @@ func stopAdv(adv_handle AdvSetHandle) uint32
 
 //go:noescape
 func updateConnParam(conn_handle ble.Handle, conn_params *ConnParams) uint32
+
+//go:noescape
+func updateDataLength(conn_handle ble.Handle, dl_params *DataLengthParams, dl_limitation *DataLengthLimitation) uint32

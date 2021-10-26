@@ -193,7 +193,7 @@ func main() {
 				break
 			}
 
-			println("event id:", evt.EventID())
+			print("event id: ", evt.EventID())
 
 			switch e := evt.(type) {
 			case *gatts.Write:
@@ -217,14 +217,15 @@ func main() {
 				statusLED = leds.Green
 
 			case *gap.DataLengthUpdateReq:
-				println(
-					"DataLengthUpdateReq:",
-					e.PeerParams.MaxTxOctets,
-					e.PeerParams.MaxRxOctets,
-					e.PeerParams.MaxTxTimeUs,
-					e.PeerParams.MaxRxTimeUs,
-				)
+				// zero DataLengthParams means SoftDevice will choose the
+				// highest supported values
+				dlParams := gap.DataLengthParams{}
+				dieErr(gap.UpdateDataLength(connHandle, &dlParams, nil))
+
+			default:
+				print(" unhandled!")
 			}
+			println()
 		}
 	}
 }

@@ -48,8 +48,8 @@ func NextEvent() (Event, error) {
 	switch {
 	case ble.EvtBase <= hdr.ID && hdr.ID <= ble.EvtLast:
 		switch hdr.ID {
-		case ble.EvtUserMemRequest:
-			return (*ble.UserMemRequest)(p), nil
+		case ble.EvtUserMemReq:
+			return (*ble.UserMemReq)(p), nil
 		case ble.EvtUserMemRelease:
 			return (*ble.UserMemRelease)(p), nil
 		}

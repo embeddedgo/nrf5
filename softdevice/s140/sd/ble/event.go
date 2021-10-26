@@ -11,19 +11,19 @@ const (
 )
 
 const (
-	EvtUserMemRequest = EvtBase + 0 // user memory request
+	EvtUserMemReq     = EvtBase + 0 // user memory request
 	EvtUserMemRelease = EvtBase + 1 // user memory release
 )
 
 type EvtHdr struct {
-	ID         uint16 // event id (eg. EvtUserMemRequest, gap.EvtConnected)
+	ID         uint16 // event id (eg. EvtUserMemReq, gap.EvtConnected)
 	Len        uint16 // length in octets including this header
 	ConnHandle Handle // connection handle
 }
 
 func (e *EvtHdr) EventID() uint16 { return e.ID }
 
-type UserMemRequest struct {
+type UserMemReq struct {
 	EvtHdr
 	Type MemType // user memory type
 }

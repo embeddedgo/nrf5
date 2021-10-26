@@ -1,5 +1,8 @@
 #!/bin/sh
 
+echo 'For nRF52840 use build-s140-*'
+exit 1
+
 GOTARGET=nrf52840
 GOTEXT=0x00026000
 GOMEM=0x20002000:253952

@@ -65,3 +65,9 @@ type DataLengthUpdateReq struct {
 	_          uint16
 	PeerParams DataLengthParams // Peer data length parameters
 }
+
+type DataLengthUpdate struct {
+	ble.EvtHdr
+	_               uint16
+	EffectiveParams DataLengthParams // The effective data length parameters
+}

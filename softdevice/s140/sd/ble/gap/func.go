@@ -52,3 +52,8 @@ func StopAdv(advHandle AdvSetHandle) error {
 func UpdateConnParam(connHandle ble.Handle, connParams *ConnParams) error {
 	return mkerr(updateConnParam(connHandle, connParams))
 }
+
+// UpdateDataLength initiated or respondd to a Data Length Update Procedure.
+func UpdateDataLength(connHandle ble.Handle, dlParams *DataLengthParams, dlLimitation *DataLengthLimitation) error {
+	return mkerr(updateDataLength(connHandle, dlParams, dlLimitation))
+}
