@@ -15,24 +15,18 @@ import (
 )
 
 const (
-	ILI9341_SLPOUT = 0x11
-	ILI9341_DISPON = 0x29
-	ILI9341_RAMWR  = 0x2C
-	ILI9341_MADCTL = 0x36
-	ILI9341_PIXFMT = 0x3A
+	ILI9341_SWRESET = 0x01
+	ILI9341_SLPOUT  = 0x11
+	ILI9341_DISPON  = 0x29
+	ILI9341_RAMWR   = 0x2C
+	ILI9341_MADCTL  = 0x36
+	ILI9341_PIXSET  = 0x3A
 )
 
 type ILI9341 struct {
 	SPI *spim.Driver
 
 	reset, cs, dc gpio.Pin
-}
-
-func (ili *ILI9341) Reset() {
-	time.Sleep(time.Millisecond)
-	ili.reset.Clear()
-	time.Sleep(time.Millisecond)
-	ili.reset.Set()
 }
 
 func (ili *ILI9341) Cmd(cmd byte) {
@@ -60,85 +54,70 @@ func main() {
 	ili.cs = p0.Pin(31)
 
 	p1 := gpio.P(1)
-	miso := p1.Pin(10)
 	sck := p1.Pin(13)
 	mosi := p1.Pin(15)
 
 	ili.dc.Clear()
 	ili.dc.Setup(gpio.ModeOut)
-	ili.reset.Set()
+	ili.reset.Clear() // assert RESET
 	ili.reset.Setup(gpio.ModeOut)
-	ili.cs.Set()
+	ili.cs.Clear() // assert CS
 	ili.cs.Setup(gpio.ModeOut)
 
 	ili.SPI = spim.NewDriver(spim.SPIM(0))
 	ili.SPI.UsePin(sck, spim.SCK)
-	ili.SPI.UsePin(miso, spim.MISO)
 	ili.SPI.UsePin(mosi, spim.MOSI)
 	ili.SPI.SetFreq(spim.F8MHz)
 	ili.SPI.Enable()
 	ili.SPI.IRQ().Enable(rtos.IntPrioLow, 0)
 
-	ili.Reset()
-	time.Sleep(10 * time.Millisecond)
-	ili.cs.Clear()
-	ili.Cmd(ILI9341_SLPOUT)
-	time.Sleep(120 * time.Millisecond)
-	ili.Cmd(ILI9341_DISPON)
-
-	ili.Cmd(ILI9341_PIXFMT)
-	ili.WriteByte(0x55) // 16 bit 565 format.
-
-	ili.Cmd(ILI9341_MADCTL)
-	ili.WriteByte(0x48) // Screen orientation.
-
-	ili.Cmd(ILI9341_RAMWR)
-
 	line := make([]byte, 240*2)
-	for i := 0; i < 320; i++ {
-		for k := range line {
-			x := i
-			if k == x || k == x+1 {
-				line[k] = 0xff
-			} else {
-				line[k] = 0
+	for {
+		ili.reset.Clear()
+		time.Sleep(time.Millisecond)
+		ili.reset.Set()
+		resetTime := time.Now()
+
+		time.Sleep(5 * time.Millisecond)
+
+		ili.Cmd(ILI9341_PIXSET)
+		ili.WriteByte(0x55) // 16 bit 565 format.
+
+		ili.Cmd(ILI9341_MADCTL)
+		ili.WriteByte(0x48) // Screen orientation.
+
+		time.Sleep(resetTime.Add(120 * time.Millisecond).Sub(time.Now()))
+
+		ili.Cmd(ILI9341_SLPOUT)
+
+		time.Sleep(5 * time.Millisecond)
+
+		ili.Cmd(ILI9341_DISPON)
+		ili.Cmd(ILI9341_RAMWR)
+
+		for k := 0; k < len(line); k += 2 {
+			line[k] = 0
+			line[k+1] = 0
+		}
+		for i := 0; i < 320; i++ {
+			ili.Write(line)
+		}
+
+		time.Sleep(time.Second)
+
+		var x int
+		for i := 0; i < 320; i++ {
+			for k := 0; k < len(line); k += 2 {
+				x++
+				line[k] = byte(x >> 8)
+				line[k+1] = byte(x)
 			}
+			ili.Write(line)
+			time.Sleep(5 * time.Millisecond)
 		}
-		ili.Write(line)
+
+		time.Sleep(time.Second)
 	}
-
-	/*
-		// Reset and select
-		reset.Clear()
-		time.Sleep(1 * time.Millisecond)
-		reset.Set()
-		time.Sleep(120 * time.Millisecond)
-		cs.Clear()
-
-		cmd := func(cmds ...byte) {
-			dc.Clear()
-			spi.WriteRead(cmds, nil)
-			dc.Set()
-		}
-
-		cmd(ili9341.SLPOUT)
-		time.Sleep(120 * time.Millisecond)
-		cmd(ili9341.DISPON)
-		cmd(ili9341.PIXSET)
-		spi.WriteRead([]byte{byte(ili9341.PF16)}, nil)
-		cmd(ili9341.MADCTL)
-		spi.WriteRead([]byte{byte(ili9341.MY | ili9341.MX | ili9341.MV | ili9341.BGR)}, nil)
-
-		cmd(ili9341.CASET)
-		spi.WriteRead([]byte{0, 0, 320 >> 8, 320 & 0xFF}, nil)
-		cmd(ili9341.PASET)
-		spi.WriteRead([]byte{0, 0, 320 >> 8, 240 & 0xFF}, nil)
-		cmd(ili9341.RAMWR)
-
-		for i := 0; i < 100; i++ {
-			spi.WriteRead([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0, 0}, nil)
-		}
-	*/
 }
 
 //go:interrupthandler

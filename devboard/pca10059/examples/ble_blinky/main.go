@@ -196,6 +196,15 @@ func main() {
 			println("event id:", evt.EventID())
 
 			switch e := evt.(type) {
+			case *gatts.Write:
+				data := e.Data()
+				switch e.Handle {
+				case ledHandles.Value:
+					if len(data) == 1 {
+						leds.User.Set(int(data[0]))
+					}
+				}
+
 			case *gap.Connected:
 				connHandle = e.ConnHandle
 				statusLED.SetOff()
@@ -207,14 +216,14 @@ func main() {
 				dieErr(gap.StartAdv(advHandle, connCfg.Tag))
 				statusLED = leds.Green
 
-			case *gatts.Write:
-				data := e.Data()
-				switch e.Handle {
-				case ledHandles.Value:
-					if len(data) == 1 {
-						leds.User.Set(int(data[0]))
-					}
-				}
+			case *gap.DataLengthUpdateReq:
+				println(
+					"DataLengthUpdateReq:",
+					e.PeerParams.MaxTxOctets,
+					e.PeerParams.MaxRxOctets,
+					e.PeerParams.MaxTxTimeUs,
+					e.PeerParams.MaxRxTimeUs,
+				)
 			}
 		}
 	}
