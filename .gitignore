@@ -1,5 +1,6 @@
 *.elf
 *.bin
+*.zip
 devboard/*/examples/*/*.hex
 zisrnames.go
 core
