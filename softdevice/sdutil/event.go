@@ -61,6 +61,8 @@ func NextEvent() (Event, error) {
 			return (*gap.Disconnected)(p), nil
 		case gap.EvtConnParamUpdate:
 			return (*gap.ConnParamUpdate)(p), nil
+		case gap.EvtDataLengthUpdateReq:
+			return (*gap.DataLengthUpdateReq)(p), nil
 		}
 	case gatts.EvtBase <= hdr.ID && hdr.ID <= gatts.EvtLast:
 		switch hdr.ID {

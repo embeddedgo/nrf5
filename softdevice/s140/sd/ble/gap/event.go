@@ -59,3 +59,9 @@ type ConnParamUpdate struct {
 	_          uint16
 	ConnParams ConnParams // GAP connection parameters
 }
+
+type DataLengthUpdateReq struct {
+	ble.EvtHdr
+	_          uint16
+	PeerParams DataLengthParams // Peer data length parameters
+}

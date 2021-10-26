@@ -308,3 +308,12 @@ const (
 	RolePeriph  Role = 1 // peripheral role
 	RoleCentral Role = 2 // central
 )
+
+// DataLengthParams contains maximum length/time that a Controller supports for
+// single Link Layer Data Channel PDU.
+type DataLengthParams struct {
+	MaxTxOctets uint16
+	MaxRxOctets uint16
+	MaxTxTimeUs uint16
+	MaxRxTimeUs uint16
+}
