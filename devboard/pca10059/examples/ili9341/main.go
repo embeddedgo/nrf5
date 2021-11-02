@@ -8,6 +8,7 @@ import (
 	"embedded/rtos"
 	"time"
 
+	"github.com/embeddedgo/nrf5/hal/clock"
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/spim"
 
@@ -46,7 +47,7 @@ func (ili *ILI9341) Write(data []byte) {
 var ili ILI9341
 
 func main() {
-	//clock.StoreTRACECONFIG(clock.T4MHz, clock.Serial) // enable SWO on P1.00
+	clock.StoreTRACECONFIG(clock.T4MHz, clock.Serial) // enable SWO on P1.00
 
 	p0 := gpio.P(0)
 	ili.dc = p0.Pin(2)
@@ -54,6 +55,7 @@ func main() {
 	ili.cs = p0.Pin(31)
 
 	p1 := gpio.P(1)
+	//miso := p1.Pin(10)
 	sck := p1.Pin(13)
 	mosi := p1.Pin(15)
 
