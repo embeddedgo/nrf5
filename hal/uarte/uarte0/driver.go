@@ -25,4 +25,4 @@ func Driver() *uarte.Driver {
 //go:interrupthandler
 func _UARTE0_UART0_Handler() { driver.ISR() }
 
-//go:linkname _UARTE0_UART0_Handler IRQ_Handler
+//go:linkname _UARTE0_UART0_Handler IRQ2_Handler
