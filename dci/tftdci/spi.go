@@ -5,74 +5,69 @@
 package tftdci
 
 import (
-	"github.com/embeddedgo/stm32/hal/gpio"
-	"github.com/embeddedgo/stm32/hal/spi"
+	"github.com/embeddedgo/nrf5/hal/gpio"
+	"github.com/embeddedgo/nrf5/hal/spim"
 )
 
-// SPI is an implementation of the display/tft.DCI that uses an SPI peripheral
+// SPIM is an implementation of the display/tft.DCI that uses an SPIM peripheral
 // to communicate with the display in what is known as 4-line serial mode.
-type SPI struct {
-	spi     *spi.Driver
+type SPIM struct {
+	spi     *spim.Driver
 	dc      gpio.Pin
 	csn     gpio.Pin
-	clkHz   int
-	mode    spi.Config
+	mode    spim.Config
+	rf, wf  spim.Freq
+	cmd     [1]byte
 	started bool
 	reconf  bool
 }
 
-// NewSPI returns new SPI based implementation of display/tft.DCI that uses the
-// configured SPI driver and the configred data/command pin. Mode can be 0, 1,
-// 2, 3 (see https://en.wikipedia.org/wiki/Serial_Peripheral_Interface)
-func NewSPI(drv *spi.Driver, dc gpio.Pin, mode, clkHz int) *SPI {
-	dci := new(SPI)
-	dci.spi = drv
-	dci.dc = dc
-	dci.clkHz = clkHz
-	switch mode {
-	case 0:
-		dci.mode = spi.CPOL0 | spi.CPHA0
-	case 1:
-		dci.mode = spi.CPOL0 | spi.CPHA1
-	case 2:
-		dci.mode = spi.CPOL1 | spi.CPHA0
-	default: // 3
-		dci.mode = spi.CPOL1 | spi.CPHA1
-	}
-	drv.Setup(spi.Master|spi.HardSS|spi.SSOut|dci.mode, clkHz)
+// NewSPIM returns new SPI based implementation of tftdrv.DCI. It properly
+// configures the provided SPI driver and DC pin to communicate with a display
+// controller. Select the SPI mode (CPOL,CPHA), write and read clock speed
+// according to the display controller specification. Note that the maximum
+// speed may be limited by the concrete instance of nRF5 SPI peripheral, the
+// bus topology and the specific display design.
+func NewSPIM(drv *spim.Driver, dc gpio.Pin, mode spim.Config, wf, rf spim.Freq) *SPIM {
+	dci := &SPIM{spi: drv, dc: dc, mode: mode, wf: wf, rf: rf}
+	dc.Clear()
+	dc.Setup(gpio.ModeOut)
+	drv.Setup(dci.mode, wf)
 	return dci
 }
 
-func (dci *SPI) UseCSN(csn gpio.Pin, reconfSPI bool) {
+// UseCSN selects csn as slave select pin. If reconf is true the SPI peripheral
+// is reconfigured by any Cmd call so it can be shared with other applications
+// (exclusive acces is required until End call).
+func (dci *SPIM) UseCSN(csn gpio.Pin, reconf bool) {
 	dci.csn = csn
-	dci.reconf = reconfSPI
+	dci.reconf = reconf
 	csn.Set()
-	csn.Setup(&gpio.Config{Mode: gpio.Out, Speed: gpio.High})
-	dci.spi.Setup(spi.Master|spi.SoftSS|spi.ISSHigh, dci.clkHz)
+	csn.Setup(gpio.ModeOut)
 }
 
-func (dci *SPI) Driver() *spi.Driver  { return dci.spi }
-func (dci *SPI) Err(clear bool) error { return dci.spi.Err(clear) }
-func (dci *SPI) DC() gpio.Pin         { return dci.dc }
+func (dci *SPIM) Driver() *spim.Driver { return dci.spi }
+func (dci *SPIM) Err(clear bool) error { return nil }
+func (dci *SPIM) DC() gpio.Pin         { return dci.dc }
 
-func (dci *SPI) Cmd(cmd byte) {
+func (dci *SPIM) Cmd(cmd byte) {
 	if !dci.started {
 		dci.started = true
 		if dci.csn.IsValid() {
 			dci.csn.Clear()
 			if dci.reconf {
-				dci.spi.Setup(spi.Master|spi.SoftSS|spi.ISSHigh, dci.clkHz)
+				dci.spi.Setup(dci.mode, dci.wf)
 			}
 		}
 		dci.spi.Enable()
 	}
 	dci.dc.Clear()
-	dci.spi.SetWordSize(8)
-	dci.spi.WriteReadByte(cmd)
+	dci.cmd[0] = cmd
+	dci.spi.WriteRead(dci.cmd[:], nil)
 	dci.dc.Set()
 }
 
-func (dci *SPI) End() {
+func (dci *SPIM) End() {
 	dci.started = false
 	if dci.csn.IsValid() {
 		dci.csn.Set()
@@ -80,32 +75,12 @@ func (dci *SPI) End() {
 	dci.spi.Disable()
 }
 
-func (dci *SPI) WriteBytes(p []uint8) {
-	dci.spi.SetWordSize(8)
+func (dci *SPIM) WriteBytes(p []uint8) {
 	dci.spi.WriteRead(p, nil)
 }
 
-func (dci *SPI) WriteString(s string) {
-	dci.spi.SetWordSize(8)
-	dci.spi.WriteStringRead(s, nil)
-}
-
-func (dci *SPI) WriteByteN(b byte, n int) {
-	dci.spi.SetWordSize(8)
-	dci.spi.WriteByteN(b, n)
-}
-
-func (dci *SPI) WriteWords(p []uint16) {
-	dci.spi.SetWordSize(16)
-	dci.spi.WriteRead16(p, nil)
-}
-
-func (dci *SPI) WriteWordN(w uint16, n int) {
-	dci.spi.SetWordSize(16)
-	dci.spi.WriteWord16N(w, n)
-}
-
-func (dci *SPI) ReadBytes(p []byte) {
-	dci.spi.SetWordSize(8)
+func (dci *SPIM) ReadBytes(p []byte) {
+	dci.spi.Periph().StoreFREQUENCY(dci.rf)
 	dci.spi.WriteRead(nil, p)
+	dci.spi.Periph().StoreFREQUENCY(dci.wf)
 }
