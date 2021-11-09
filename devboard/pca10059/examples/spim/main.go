@@ -32,7 +32,7 @@ func main() {
 	drv.UsePin(sck, spim.SCK)
 	drv.UsePin(miso, spim.MISO)
 	drv.UsePin(mosi, spim.MOSI)
-	drv.SetFreq(spim.F1MHz)
+	drv.Setup(spim.CPOL0|spim.CPHA0, spim.F1MHz)
 	drv.Periph().StoreORC('.')
 	drv.Enable()
 	drv.IRQ().Enable(rtos.IntPrioLow, 0)
