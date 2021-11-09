@@ -71,15 +71,11 @@ func (d *Driver) UsePin(pin gpio.Pin, s Signal) {
 	p.StorePSEL(s, pin.PSEL(), true)
 }
 
-// SetFreq sets SPI frequency (SCK clock).
-func (d *Driver) SetFreq(f Freq) {
-	d.p.StoreFREQUENCY(f)
-}
-
-// SetConfig sets the SPI protocol configuration.
-func (d *Driver) SetConfig(cfg Config) {
-	// TODO: set gpio output for SCK
+// Setup sets the SPI mode and clock frequency.
+func (d *Driver) Setup(cfg Config, f Freq) {
+	// TODO: set gpio output for SCK according to CPOL/CPHA
 	d.p.StoreCONFIG(cfg)
+	d.p.StoreFREQUENCY(f)
 }
 
 // IRQ returns the interrupt assigned to UART peripheral used by driver.
