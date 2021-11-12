@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/embeddedgo/display/pixd"
-	"github.com/embeddedgo/display/pixd/driver/tftdrv/ili9341"
+	"github.com/embeddedgo/display/pixd/driver/tftdrv/st7789"
 	"github.com/embeddedgo/nrf5/dci/tftdci"
 	"github.com/embeddedgo/nrf5/hal/clock"
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/spim"
-	"github.com/embeddedgo/nrf5/hal/spim/spim0"
+	"github.com/embeddedgo/nrf5/hal/spim/spim3"
 
 	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
 )
@@ -24,35 +24,49 @@ func main() {
 	clock.StoreTRACECONFIG(clock.T4MHz, clock.Serial) // enable SWO on P1.00
 
 	// Assign GPIO pins
+	/*
+		p0 := gpio.P(0)
+		dc := p0.Pin(2)
+		reset := p0.Pin(29)
+		csn := p0.Pin(31)
 
+		p1 := gpio.P(1)
+		miso := p1.Pin(10)
+		sck := p1.Pin(13)
+		mosi := p1.Pin(15)
+	*/
 	p0 := gpio.P(0)
-	dc := p0.Pin(2)
-	reset := p0.Pin(29)
-	csn := p0.Pin(31)
+	reset := p0.Pin(2)
+	sda := p0.Pin(29)
+	scl := p0.Pin(31)
 
 	p1 := gpio.P(1)
-	miso := p1.Pin(10)
-	sck := p1.Pin(13)
-	mosi := p1.Pin(15)
+	blk := p1.Pin(10)
+	csn := p1.Pin(13)
+	dc := p1.Pin(15)
 
 	// Configure peripherals
+
+	blk.Clear()
+	blk.Setup(gpio.ModeOut)
 
 	reset.Clear()
 	reset.Setup(gpio.ModeOut)
 	time.Sleep(time.Millisecond)
 	reset.Set() // deassert RESET
+	time.Sleep(5 * time.Millisecond)
 
-	spidrv := spim0.Driver()
-	spidrv.UsePin(sck, spim.SCK)
-	spidrv.UsePin(miso, spim.MISO)
-	spidrv.UsePin(mosi, spim.MOSI)
-	dci := tftdci.NewSPIM(spidrv, dc, spim.CPOL0|spim.CPHA0, spim.F8MHz, spim.F8MHz)
+	spidrv := spim3.Driver()
+	spidrv.UsePin(scl, spim.SCK)
+	//spidrv.UsePin(miso, spim.MISO)
+	spidrv.UsePin(sda, spim.MOSI)
+	dci := tftdci.NewSPIM(spidrv, dc, spim.CPOL0|spim.CPHA0, spim.F16MHz, spim.F16MHz)
 	dci.UseCSN(csn, false)
 
 	// Run
 
-	drv := ili9341.New(dci)
-	drv.Init(ili9341.GFX)
+	drv := st7789.New(dci)
+	drv.Init(st7789.GFX)
 	//drv := ili9486.NewOver(dci)
 	//drv.Init(ili9486.MSP4022)
 	disp := pixd.NewDisplay(drv)
@@ -60,7 +74,9 @@ func main() {
 	a := disp.NewArea(disp.Bounds())
 	a.SetColorRGBA(77, 78, 79, 255)
 	a.Fill(a.Bounds())
-	a.SetRect(disp.Bounds().Sub(image.Pt(0, 0)))
+	blk.Set()
+
+	a.SetRect(image.Rect(0, 0, 240, 240))
 	r := a.Bounds()
 
 	/*
