@@ -66,10 +66,15 @@ func main() {
 
 	drv := st7789.New(dci)
 	drv.Init(st7789.GFX)
+	dci.Cmd(st7789.VSCRDEF)
+	dci.WriteBytes([]byte{0, 0, 1, 64, 0, 0}) // TFA=BFA=0, VSA=320
+	dci.Cmd(st7789.VSCSAD)
+	dci.WriteBytes([]byte{0, 40})
+
 	//drv := ili9486.NewOver(dci)
 	//drv.Init(ili9486.MSP4022)
 	disp := pixd.NewDisplay(drv)
-	disp.SetRect(image.Rect(0, 0+40, 240, 240+40))
+	disp.SetRect(image.Rect(0, 40, 240, 240+40))
 	r := disp.Bounds()
 
 	a := disp.NewArea(r)
@@ -79,9 +84,10 @@ func main() {
 
 	for i := 0; ; i++ {
 		time.Sleep(2 * time.Second)
-		println(i & 3)
+		println("\n", i & 3)
 		disp.SetDir(i)
 		a.SetRect(a.Rect())
+		println("a.Rect() = ", a.Rect().String())
 		r := a.Bounds()
 
 		a.SetColorRGBA(0, 0, 0, 255)

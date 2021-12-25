@@ -1,6 +1,6 @@
 #!/bin/sh
 
-INTERFACE=stlink
+#INTERFACE=stlink
 TARGET=nrf52
 TRACECLKIN=4000000
 
