@@ -50,16 +50,20 @@ func (dci *SPIM) Driver() *spim.Driver { return dci.spi }
 func (dci *SPIM) Err(clear bool) error { return nil }
 func (dci *SPIM) DC() gpio.Pin         { return dci.dc }
 
+func start(dci *SPIM) {
+	dci.started = true
+	if dci.csn.IsValid() {
+		dci.csn.Clear()
+		if dci.reconf {
+			dci.spi.Setup(dci.mode, dci.wf)
+		}
+	}
+	dci.spi.Enable()
+}
+
 func (dci *SPIM) Cmd(cmd byte) {
 	if !dci.started {
-		dci.started = true
-		if dci.csn.IsValid() {
-			dci.csn.Clear()
-			if dci.reconf {
-				dci.spi.Setup(dci.mode, dci.wf)
-			}
-		}
-		dci.spi.Enable()
+		start(dci)
 	}
 	dci.dc.Clear()
 	dci.cmd[0] = cmd
@@ -76,10 +80,16 @@ func (dci *SPIM) End() {
 }
 
 func (dci *SPIM) WriteBytes(p []uint8) {
+	if !dci.started {
+		start(dci)
+	}
 	dci.spi.WriteRead(p, nil)
 }
 
 func (dci *SPIM) ReadBytes(p []byte) {
+	if !dci.started {
+		start(dci)
+	}
 	dci.spi.Periph().StoreFREQUENCY(dci.rf)
 	dci.spi.WriteRead(nil, p)
 	dci.spi.Periph().StoreFREQUENCY(dci.wf)

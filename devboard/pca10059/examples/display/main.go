@@ -7,6 +7,9 @@ package main
 import (
 	"time"
 
+	"github.com/embeddedgo/display/pix/displays"
+	"github.com/embeddedgo/display/pix/examples"
+
 	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
 
 	"github.com/embeddedgo/nrf5/dci/tftdci"
@@ -14,9 +17,6 @@ import (
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/spim"
 	"github.com/embeddedgo/nrf5/hal/spim/spim3"
-
-	"github.com/embeddedgo/display/pix/displays"
-	"github.com/embeddedgo/display/pix/examples"
 )
 
 func main() {
@@ -54,16 +54,16 @@ func main() {
 
 	// Run
 
+	disp := displays.Adafruit_0i96_128x64_OLED_SSD1306(dci)
 	//disp := displays.Adafruit_1i5_128x128_OLED_SSD1351(dci)
-	disp := displays.Adafruit_1i54_240x240_IPS_ST7789(dci)
+	//disp := displays.Adafruit_1i54_240x240_IPS_ST7789(dci)
 	//disp := displays.Adafruit_2i8_240x320_TFT_ILI9341(dci)
 	//disp := displays.ERTFTM_1i54_240x240_IPS_ST7789(dci)
 	//disp := displays.MSP4022_4i0_320x480_TFT_ILI9486(dci)
 	//disp := displays.Waveshare_1i5_128x128_OLED_SSD1351(dci)
-
 	for {
 		//examples.Colors(disp)
-		//examples.RotateDisplay(disp)
+		examples.RotateDisplay(disp)
 		//examples.DrawText(disp)
 		examples.GraphicsTest(disp)
 	}
