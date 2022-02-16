@@ -17,7 +17,6 @@ type SPIM struct {
 	csn     gpio.Pin
 	mode    spim.Config
 	rf, wf  spim.Freq
-	cmd     [1]byte
 	started bool
 	reconf  bool
 }
@@ -61,13 +60,12 @@ func start(dci *SPIM) {
 	dci.spi.Enable()
 }
 
-func (dci *SPIM) Cmd(cmd byte) {
+func (dci *SPIM) Cmd(p []byte) {
 	if !dci.started {
 		start(dci)
 	}
 	dci.dc.Clear()
-	dci.cmd[0] = cmd
-	dci.spi.WriteRead(dci.cmd[:], nil)
+	dci.spi.WriteRead(p, nil)
 	dci.dc.Set()
 }
 
