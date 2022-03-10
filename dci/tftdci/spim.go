@@ -9,7 +9,7 @@ import (
 	"github.com/embeddedgo/nrf5/hal/spim"
 )
 
-// SPIM is an implementation of the display/tft.DCI that uses an SPIM peripheral
+// SPIM is an implementation of the tftdrv.DCI that uses an SPIM peripheral
 // to communicate with the display in what is known as 4-line serial mode.
 type SPIM struct {
 	spi     *spim.Driver
