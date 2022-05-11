@@ -1,6 +1,6 @@
 #!/bin/sh
 
-INTERFACE=stlink
+#INTERFACE=stlink
 #INTERFACE=cmsis-dap
 TARGET=nrf52
 
