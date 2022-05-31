@@ -11,30 +11,27 @@ func ain(pin Pin) AIN {
 	if psel>>5 != 0 {
 		return -1
 	}
-	n := psel & 31
 	switch {
-	case n < 2:
+	case psel <= 1:
 		return -1
-	case n < 6:
-		return AIN(n - 2)
-	case n < 28:
+	case psel <= 5:
+		return AIN(psel - 1)
+	case psel <= 27:
 		return -1
-	case n < 32:
-		return AIN(n - 24)
 	default:
-		return -1
+		return AIN(psel - 23)
 	}
 }
 
 func apin(a AIN) Pin {
-	if a < 0 {
+	if a <= 0 {
 		return Pin{}
 	}
 	h := portaddr(0) + uintptr(a)
-	if a < 4 {
-		h += 2
+	if a <= AIN3 {
+		h += 1
 	} else {
-		h += 24
+		h += 23
 	}
 	return Pin{h}
 }

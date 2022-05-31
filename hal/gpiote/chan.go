@@ -19,9 +19,9 @@ type Chan int8
 
 var unusedChannels uint32 = 1<<numChan - 1
 
-// AllocChan returns first unused GPIOTE channel. It returns negative number if
-// there are no free channels.
-func AllocChan() Chan {
+// Alloc returns an unused GPIOTE channel. It returns negative number if there
+// is no free channel.
+func Alloc() Chan {
 	return Chan(internal.BitAlloc(&unusedChannels))
 }
 
@@ -62,9 +62,9 @@ func (e Event) Event() *te.Event { return r().Regs.Event(int(e)) }
 type Config uint32
 
 const (
-	ModeDiscon Config = 0 // Disconnect pin from GPIOTE module.
-	ModeEvent  Config = 1 // Pin generates IN event.
-	ModeTask   Config = 3 // Pin controlled by OUT, SET, CLR task.
+	ModeNC    Config = 0 // Disconnect pin from GPIOTE module.
+	ModeEvent Config = 1 // Pin generates IN event.
+	ModeTask  Config = 3 // Pin controlled by OUT, SET, CLR task.
 
 	PolarityNone   Config = 0 << 16 // No task on pin, no event from pin.
 	PolarityLoToHi Config = 1 << 16 // OUT sets pin, IN when rising edge.

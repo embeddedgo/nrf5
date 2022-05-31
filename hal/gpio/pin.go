@@ -125,8 +125,17 @@ func (ps PSEL) Pin() Pin {
 }
 
 const (
-	VDD      AIN = 9   // VDD
-	VDDHDIV5 AIN = 0xD // VDDH / 5
+	ANC     AIN = 0   // Not connected.
+	AIN0    AIN = 1   // Analog input 0.
+	AIN1    AIN = 2   // Analog input 1.
+	AIN2    AIN = 3   // Analog input 2.
+	AIN3    AIN = 4   // Analog input 3.
+	AIN4    AIN = 5   // Analog input 4.
+	AIN5    AIN = 6   // Analog input 5.
+	AIN6    AIN = 7   // Analog input 6.
+	AIN7    AIN = 8   // Analog input 7.
+	VDD     AIN = 9   // VDD
+	VDDH1_5 AIN = 0xD // VDDH / 5
 )
 
 // AIN is an analog input number.

@@ -25,14 +25,12 @@ func main() {
 	// Assign GPIO pins
 
 	p0 := gpio.P(0)
-	miso := p0.Pin(2)
-	mosi := p0.Pin(29)
-	scl := p0.Pin(31)
-
-	p1 := gpio.P(1)
-	cs := p1.Pin(10)
-	dc := p1.Pin(13)
-	reset := p1.Pin(15)
+	scl := p0.Pin(13)
+	mosi := p0.Pin(15)
+	reset := p0.Pin(17)
+	dc := p0.Pin(20)
+	cs := p0.Pin(22)
+	miso := p0.Pin(24)
 
 	// Configure peripherals
 
