@@ -14,10 +14,10 @@ import (
 )
 
 func main() {
-	led := gpiote.AllocChan()
+	led := gpiote.Alloc()
 	led.Setup(leds.User.Pin(), gpiote.ModeTask|gpiote.PolarityToggle)
 
-	btn := gpiote.AllocChan()
+	btn := gpiote.Alloc()
 	btn.Setup(buttons.User.Pin(), gpiote.ModeEvent|gpiote.PolarityHiToLo)
 
 	btnled := te.AllocChan()
