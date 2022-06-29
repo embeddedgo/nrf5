@@ -8,8 +8,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
-	"strings"
 	"time"
 
 	"github.com/embeddedgo/display/images"
@@ -136,12 +134,9 @@ func main() {
 	r := a.Bounds()
 	a.SetColor(black)
 	a.Fill(r)
-	bgimg, err := png.Decode(strings.NewReader(testdata.GopherPNG))
-	if err == nil {
-		bgimg = images.Magnify(bgimg, 4, 4, images.Nearest)
-	} else {
-		bgimg = &image.Uniform{color.Gray{128}}
-	}
+	bgimg := images.Magnify(
+		images.NewImmRGB16(image.Rect(0, 0, 48, 48), testdata.Gopher48x48RGB16),
+		4, 4, images.Nearest)
 	offset := r.Size().Sub(bgimg.Bounds().Size()).Div(2)
 	sp := bgimg.Bounds().Min
 	r = bgimg.Bounds().Sub(sp).Add(r.Min).Add(offset)
