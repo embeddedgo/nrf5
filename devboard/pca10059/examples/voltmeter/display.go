@@ -69,7 +69,7 @@ func (a *TextArea) WriteString(text string) {
 }
 
 // Printf works like fmt.Printf
-func (a *TextArea) Printf(f string, v ...interface{}) {
+func (a *TextArea) Printf(f string, v ...any) {
 	a.WriteString(fmt.Sprintf(f, v...))
 }
 

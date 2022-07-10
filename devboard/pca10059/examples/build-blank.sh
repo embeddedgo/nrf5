@@ -5,4 +5,4 @@ GOTEXT=0x00000000
 GOMEM=0x20000000:256K
 GOSTRIPFN=1
 
-. ../../../../../scripts/build.sh $@
+. $(emgo env GOROOT)/../scripts/build.sh $@

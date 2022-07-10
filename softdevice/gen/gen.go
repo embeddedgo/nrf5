@@ -18,7 +18,7 @@ import (
 	"unicode"
 )
 
-func die(f string, a ...interface{}) {
+func die(f string, a ...any) {
 	fmt.Fprintf(os.Stderr, f+"\n", a...)
 	os.Exit(1)
 }
@@ -83,14 +83,14 @@ func doNotEdit(w io.Writer, src string) {
 	fmt.Fprintf(w, "// Code generated from %s; DO NOT EDIT.\n\n", src)
 }
 
-func (g *Gen) printgo(f string, a ...interface{}) {
+func (g *Gen) printgo(f string, a ...any) {
 	if g.gobuf == nil {
 		g.gobuf = new(bytes.Buffer)
 	}
 	fmt.Fprintf(g.gobuf, f, a...)
 }
 
-func (g *Gen) printasm(f string, a ...interface{}) {
+func (g *Gen) printasm(f string, a ...any) {
 	if g.asmbuf == nil {
 		g.asmbuf = new(bytes.Buffer)
 		doNotEdit(g.asmbuf, g.filename)
@@ -169,7 +169,7 @@ func (g *Gen) Run() {
 	}
 }
 
-func (g *Gen) die(i interface{}) {
+func (g *Gen) die(i any) {
 	switch v := i.(type) {
 	case Token:
 		v.Die(g.filename)
@@ -178,7 +178,7 @@ func (g *Gen) die(i interface{}) {
 	}
 }
 
-func (g *Gen) expect(tvs ...interface{}) (tok Token) {
+func (g *Gen) expect(tvs ...any) (tok Token) {
 	tok = g.lex.Next()
 	i := 0
 	for i < len(tvs) {

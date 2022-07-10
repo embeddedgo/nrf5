@@ -14,4 +14,4 @@ s132_nrf52_6_0_0_softdevice_hex=0xA8
 s132_nrf52_6_1_0_softdevice_hex=0xAF
 s132_nrf52_6_1_1_softdevice_hex=0xB7
 
-. ../../../../../scripts/load-nrfutil.sh $@
+. $(emgo env GOROOT)/../scripts/load-nrfutil.sh $@

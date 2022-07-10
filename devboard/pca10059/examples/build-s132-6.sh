@@ -8,9 +8,9 @@ GOTEXT=0x00026000
 GOMEM=0x20002000:253952
 GOOUT=hex
 
-. ../../../../../scripts/build.sh $@
+. $(emgo env GOROOT)/../scripts/build.sh $@
 
 bootversion=1
 appversion=1
 
-. ../../../../../scripts/nrf5-settings.sh
+. $(emgo env GOROOT)/../scripts/nrf5-settings.sh
