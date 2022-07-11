@@ -14,6 +14,7 @@ import (
 	"github.com/embeddedgo/display/math2d"
 	"github.com/embeddedgo/display/pix"
 	"github.com/embeddedgo/display/pix/displays"
+	"github.com/embeddedgo/display/pix/driver/imgdrv"
 	"github.com/embeddedgo/display/testdata"
 
 	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
@@ -24,13 +25,130 @@ import (
 	"github.com/embeddedgo/nrf5/hal/spim/spim3"
 )
 
-const frac = 6
+const frac = 8
 
 var (
 	black = color.Gray{}
 	white = color.Gray{255}
 	red   = color.RGBA{255, 0, 0, 255}
 )
+
+var bgimg = images.Magnify(
+	images.NewImmRGB16(image.Rect(0, 0, 48, 48), testdata.Gopher48x48RGB16),
+	4, 4, images.Nearest,
+)
+
+func drawDial(a *pix.Area, r image.Rectangle) int {
+	a.SetColor(black)
+	a.Fill(r)
+
+	// Draw the background image in the center of r
+	o := r.Size().Sub(bgimg.Bounds().Size()).Div(2)
+	a.Draw(r.Add(o), bgimg, bgimg.Bounds().Min, nil, image.Point{}, draw.Src)
+
+	// Calculate the length of hour and minute marks on the assumption that
+	// a is centerad around (0, 0) so r.Min is roughly equal to -r.Max.
+	d := r.Max.X
+	if d < r.Max.Y {
+		d = r.Max.Y
+	}
+	d--
+	// Hour and minute marks at twelve o'clock.
+	hour := [2]image.Point{{0, -d}, {0, -d * 30 / 32}}
+	min := [2]image.Point{{0, -d}, {0, -d * 31 / 32}}
+
+	// Draw the marks around the dial.
+	a.SetColor(white)
+	for i := 0; i < 60; i++ {
+		v := min
+		if i%5 == 0 {
+			v = hour
+		}
+		alpha := int32(math2d.FullAngle * int64(i) / 60)
+		v[0] = math2d.Rotate(math2d.F(v[0], frac), alpha)
+		v[1] = math2d.Rotate(math2d.F(v[1], frac), alpha)
+		a.Line(math2d.I(v[0], frac), math2d.I(v[1], frac))
+	}
+
+	// Return the length of the second hand.
+	return d
+}
+
+func drawDial1(ar *pix.Area, r image.Rectangle) {
+	img := images.NewRGB16(ar.Bounds())
+	disp := pix.NewDisplay(imgdrv.New(img))
+	a := disp.NewArea(disp.Bounds())
+	a.SetOrigin(ar.Bounds().Min)
+
+	// Draw the background image in the center of a
+	o := r.Size().Sub(bgimg.Bounds().Size()).Div(2)
+	a.Draw(r.Add(o), bgimg, bgimg.Bounds().Min, nil, image.Point{}, draw.Src)
+
+	// Calculate the length of hour and minute marks on the assumption that
+	// a is centerad around (0, 0) so r.Min is roughly equal to -r.Max.
+	d := r.Max.X
+	if d < r.Max.Y {
+		d = r.Max.Y
+	}
+	d--
+	// Hour and minute marks at twelve o'clock.
+	hour := [2]image.Point{{0, -d}, {0, -d * 30 / 32}}
+	min := [2]image.Point{{0, -d}, {0, -d * 31 / 32}}
+
+	// Draw the marks around the dial.
+	a.SetColor(white)
+	for i := 0; i < 60; i++ {
+		v := min
+		if i%5 == 0 {
+			v = hour
+		}
+		alpha := int32(math2d.FullAngle * int64(i) / 60)
+		v[0] = math2d.Rotate(math2d.F(v[0], frac), alpha)
+		v[1] = math2d.Rotate(math2d.F(v[1], frac), alpha)
+		a.Line(math2d.I(v[0], frac), math2d.I(v[1], frac))
+	}
+
+	ar.Draw(ar.Bounds(), img, img.Bounds().Min, nil, image.Point{}, draw.Src)
+}
+
+func drawDial2(ar *pix.Area, r image.Rectangle, h1, h2, h3 *Hand) {
+	img := images.NewRGB16(ar.Bounds())
+	disp := pix.NewDisplay(imgdrv.New(img))
+	a := disp.NewArea(disp.Bounds())
+	a.SetOrigin(ar.Bounds().Min)
+
+	// Draw the background image in the center of a
+	o := r.Size().Sub(bgimg.Bounds().Size()).Div(2)
+	a.Draw(r.Add(o), bgimg, bgimg.Bounds().Min, nil, image.Point{}, draw.Src)
+
+	// Calculate the length of hour and minute marks on the assumption that
+	// a is centerad around (0, 0) so r.Min is roughly equal to -r.Max.
+	d := r.Max.X
+	if d < r.Max.Y {
+		d = r.Max.Y
+	}
+	d--
+	// Hour and minute marks at twelve o'clock.
+	hour := [2]image.Point{{0, -d}, {0, -d * 30 / 32}}
+	min := [2]image.Point{{0, -d}, {0, -d * 31 / 32}}
+
+	// Draw the marks around the dial.
+	a.SetColor(white)
+	for i := 0; i < 60; i++ {
+		v := min
+		if i%5 == 0 {
+			v = hour
+		}
+		alpha := int32(math2d.FullAngle * int64(i) / 60)
+		v[0] = math2d.Rotate(math2d.F(v[0], frac), alpha)
+		v[1] = math2d.Rotate(math2d.F(v[1], frac), alpha)
+		a.Line(math2d.I(v[0], frac), math2d.I(v[1], frac))
+	}
+	h1.Draw(a)
+	h2.Draw(a)
+	h3.Draw(a)
+	ar.Draw(ar.Bounds(), img, img.Bounds().Min, nil, image.Point{}, draw.Src)
+}
 
 type Hand struct {
 	Width int
@@ -59,15 +177,6 @@ func (h *Hand) bounds() image.Rectangle {
 	return r
 }
 
-func (h *Hand) Next(alpha int32) bool {
-	for i := range h.Base {
-		v := math2d.F(h.Base[i], frac)
-		v = math2d.Rotate(v, alpha)
-		h.next[i] = math2d.I(v, frac)
-	}
-	return h.next != h.cur
-}
-
 func (h *Hand) Draw(a *pix.Area) {
 	if h.cur[0] == h.cur[1] && h.cur[2] == h.cur[3] {
 		a.SetColor(red)
@@ -80,10 +189,43 @@ func (h *Hand) Draw(a *pix.Area) {
 	}
 }
 
-func (h *Hand) Clear(a *pix.Area, img image.Image, offset image.Point) {
-	r := h.bounds()
-	sp := r.Min.Add(offset)
-	a.Draw(r, img, sp, nil, image.Point{}, draw.Src)
+func (h *Hand) Clear(a *pix.Area) {
+	rect := a.Rect()
+	bounds := a.Bounds()
+	newr := h.bounds().Add(rect.Min.Sub(bounds.Min))
+	delta := newr.Min.Sub(rect.Min)
+	a.SetRect(newr)
+	a.SetOrigin(bounds.Min.Add(delta))
+	drawDial1(a, bounds)
+	a.SetRect(rect)
+	a.SetOrigin(bounds.Min)
+}
+
+func (h *Hand) Update1(a *pix.Area, h1, h2, h3 *Hand) {
+	rect := a.Rect()
+	bounds := a.Bounds()
+	hb := h.bounds()
+	h.cur = h.next
+	hb = hb.Union(h.bounds())
+	newr := hb.Add(rect.Min.Sub(bounds.Min))
+	delta := newr.Min.Sub(rect.Min)
+	a.SetRect(newr)
+	a.SetOrigin(bounds.Min.Add(delta))
+	drawDial2(a, bounds, h1, h2, h3)
+	a.SetRect(rect)
+	a.SetOrigin(bounds.Min)
+}
+
+func (h *Hand) Next(alpha int32) bool {
+	for i := range h.Base {
+		v := math2d.F(h.Base[i], frac)
+		v = math2d.Rotate(v, alpha)
+		h.next[i] = math2d.I(v, frac)
+	}
+	return h.next != h.cur
+}
+
+func (h *Hand) Update() {
 	h.cur = h.next
 }
 
@@ -131,75 +273,92 @@ func main() {
 	// Draw a clock dial with the hour and minute marks and the gopher image
 	// in the center.
 
-	r := a.Bounds()
-	a.SetColor(black)
-	a.Fill(r)
-	bgimg := images.Magnify(
-		images.NewImmRGB16(image.Rect(0, 0, 48, 48), testdata.Gopher48x48RGB16),
-		4, 4, images.Nearest)
-	offset := r.Size().Sub(bgimg.Bounds().Size()).Div(2)
-	sp := bgimg.Bounds().Min
-	r = bgimg.Bounds().Sub(sp).Add(r.Min).Add(offset)
-	offset = sp.Sub(r.Min)
-	a.Draw(r, bgimg, sp, nil, image.Point{}, draw.Src)
-	a.SetColor(white)
-	for i := 0; i < 60; i++ {
-		v0 := image.Pt(0, a.Bounds().Min.Y+1)
-		v1 := v0
-		if i%5 == 0 {
-			v1.Y = v1.Y * 15 / 16 // hour mark
-		} else {
-			v1.Y = v1.Y * 31 / 32 // minute mark
-		}
-		alpha := int32(math2d.FullAngle * int64(i) / 60)
-		v0 = math2d.Rotate(math2d.F(v0, frac), alpha)
-		v1 = math2d.Rotate(math2d.F(v1, frac), alpha)
-		a.Line(math2d.I(v0, frac), math2d.I(v1, frac))
-	}
+	d := drawDial(a, a.Bounds())
 
 	// Setup hands
 
 	sec := Hand{
 		Base: [4]image.Point{
-			{0, 0}, {0, 0},
-			{0, r.Min.Y * 15 / 16}, {0, r.Min.Y * 15 / 16},
+			{0, d / 8}, {0, d / 8},
+			{0, -d}, {0, -d},
 		},
 	}
 	min := Hand{
 		Base: [4]image.Point{
-			{-3, 0}, {3, 0},
-			{2, r.Min.Y * 3 / 4}, {-2, r.Min.Y * 3 / 4},
+			{-3, d / 8}, {3, d / 8},
+			{3, -d * 3 / 4}, {-3, -d * 3 / 4},
 		},
 	}
 	hou := Hand{
 		Base: [4]image.Point{
-			{-4, 0}, {4, 0},
-			{3, r.Min.Y / 2}, {-3, r.Min.Y / 2},
+			{-4, d / 8}, {4, d / 8},
+			{4, -d / 2}, {-4, -d / 2},
 		},
 	}
 
 	// Run the clock
-
 	t := time.Now()
+	/*for {
+	  	h, m, s := t.Clock()
+	  	h26 := int32(h*8+m*10/75) << 23 // positive 6.26 fixed point hour
+	  	hou.Next(h26 / 3 << 3)
+	  	hou.Update()
+	  	m25 := int32(m*4+s/15) << 23 // positive 7.25 fixed point minute
+	  	min.Next(m25 / 15 << 5)
+	  	min.Update()
+	  	s25 := int32(s) << 25 // positive 7.25 fixed point second
+	  	sec.Next(s25 / 15 << 5)
+	  	sec.Update()
+	  	drawDial(a, a.Bounds())
+	  	hou.Draw(a)
+	  	min.Draw(a)
+	  	sec.Draw(a)
+	  	t = t.Add(time.Second)
+	  	time.Sleep(t.Sub(time.Now()))
+	  }
+	*/
+	/*for {
+		h, m, s := t.Clock()
+		h26 := int32(h*8+m*10/75) << 23 // positive 6.26 fixed point hour
+		if hou.Next(h26 / 3 << 3) {
+			hou.Clear(a)
+			hou.Update()
+			hou.Draw(a)
+			min.Draw(a)
+			sec.Draw(a)
+		}
+		m25 := int32(m*4+s/15) << 23 // positive 7.25 fixed point minute
+		if min.Next(m25 / 15 << 5) {
+			min.Clear(a)
+			min.Update()
+			hou.Draw(a)
+			min.Draw(a)
+			sec.Draw(a)
+		}
+		s25 := int32(s) << 25 // positive 7.25 fixed point second
+		if sec.Next(s25 / 15 << 5) {
+			sec.Clear(a)
+			sec.Update()
+			hou.Draw(a)
+			min.Draw(a)
+			sec.Draw(a)
+		}
+		t = t.Add(time.Second)
+		time.Sleep(t.Sub(time.Now()))
+	}*/
 	for {
 		h, m, s := t.Clock()
-		if hou.Next(int32(h*4+m/15) << 23 / 6 << 5) {
-			hou.Clear(a, bgimg, offset)
-			hou.Draw(a)
-			min.Draw(a)
-			sec.Draw(a)
+		h26 := int32(h*8+m*10/75) << 23 // positive 6.26 fixed point hour
+		if hou.Next(h26 / 3 << 3) {
+			hou.Update1(a, &hou, &min, &sec)
 		}
-		if min.Next(int32(m*4+s/15) << 23 / 15 << 5) {
-			min.Clear(a, bgimg, offset)
-			hou.Draw(a)
-			min.Draw(a)
-			sec.Draw(a)
+		m25 := int32(m*4+s/15) << 23 // positive 7.25 fixed point minute
+		if min.Next(m25 / 15 << 5) {
+			min.Update1(a, &hou, &min, &sec)
 		}
-		if sec.Next(int32(s) << 25 / 15 << 5) {
-			sec.Clear(a, bgimg, offset)
-			hou.Draw(a)
-			min.Draw(a)
-			sec.Draw(a)
+		s25 := int32(s) << 25 // positive 7.25 fixed point second
+		if sec.Next(s25 / 15 << 5) {
+			sec.Update1(a, &hou, &min, &sec)
 		}
 		t = t.Add(time.Second)
 		time.Sleep(t.Sub(time.Now()))
