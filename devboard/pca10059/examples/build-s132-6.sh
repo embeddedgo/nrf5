@@ -1,14 +1,15 @@
 #!/bin/sh
 
-echo 'For nRF52840 use build-s140-*'
+echo 'For nRF52840 use build-s140-7.sh'
 exit 1
 
-GOTARGET=nrf52840
-GOTEXT=0x00026000
-GOMEM=0x20002000:253952
-GOOUT=hex
+export GOTARGET=nrf52840
+export GOTEXT=0x00026000
+export GOMEM=0x20002000:253952
+export GOSTRIPFN=1
+export GOOUT=hex
 
-. $(emgo env GOROOT)/../scripts/build.sh $@
+emgo build $@
 
 bootversion=1
 appversion=1

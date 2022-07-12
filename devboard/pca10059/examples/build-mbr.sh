@@ -1,11 +1,12 @@
 #!/bin/sh
 
-GOTARGET=nrf52840
-GOTEXT=0x00001000
-GOMEM=0x20000008:262136
-GOOUT=hex
+export GOTARGET=nrf52840
+export GOTEXT=0x00001000
+export GOMEM=0x20000008:262136
+export GOSTRIPFN=1
+export GOOUT=hex
 
-. $(emgo env GOROOT)/../scripts/build.sh $@
+emgo build $@
 
 bootversion=1
 appversion=1
