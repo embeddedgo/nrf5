@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export GOTARGET=nrf52840
-export GOTEXT=0x00001000
+export GOTEXT=0x00001000:1020K
 export GOMEM=0x20000008:262136
 export GOSTRIPFN=1
 export GOOUT=hex
