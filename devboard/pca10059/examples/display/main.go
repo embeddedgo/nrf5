@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Display draws on the connected display.
 package main
 
 import (
@@ -59,8 +60,8 @@ func main() {
 	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789(dci)
 	//disp := displays.MSP4022_4i0_320x480_TFT_ILI9486(dci)
 	//disp := displays.Waveshare_1i5_128x128_OLED_SSD1351(dci)
+
 	for {
-		examples.Colors(disp)
 		examples.RotateDisplay(disp)
 		examples.DrawText(disp)
 		examples.GraphicsTest(disp)
