@@ -38,7 +38,7 @@ var (
 func main() {
 	// External peripherals with their signals (original names)
 
-	var oled struct{ scl, sda, res, dc gpio.Pin }
+	var oled struct{ scl, sda, res, dc, cs gpio.Pin }
 
 	// Assigning GPIO pins to the signals of external peripherals
 
@@ -47,6 +47,7 @@ func main() {
 	oled.sda = p0.Pin(15)
 	oled.res = p0.Pin(17)
 	oled.dc = p0.Pin(20)
+	oled.cs = p0.Pin(22) // some boards don't expose this signal
 
 	// Configure internal peripherals
 
@@ -57,6 +58,7 @@ func main() {
 	spi.UsePin(oled.scl, spim.SCK)
 	spi.UsePin(oled.sda, spim.MOSI)
 	dci := tftdci.NewSPIM(spi, oled.dc, spim.CPOL0|spim.CPHA0, spim.F16MHz, spim.F16MHz)
+	dci.UseCSN(oled.cs, false)
 
 	// Initialize button
 
