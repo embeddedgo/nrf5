@@ -53,7 +53,7 @@ func LoadHFCLKSTAT() (src Source, running bool) {
 
 // LoadLFCLKRUN returns true if LFCLKSTART task was triggered.
 func LoadLFCLKRUN() bool {
-	return r().lfclkrun.LoadBit(0) != 0
+	return r().lfclkrun.LoadBits(1<<0) != 0
 }
 
 // LoadLFCLKSTAT returns information about LFCLK status (running or not) and
