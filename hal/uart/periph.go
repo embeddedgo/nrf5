@@ -75,19 +75,19 @@ const (
 func (p *Periph) LoadSHORTS() Shorts   { return Shorts(p.Regs.LoadSHORTS()) }
 func (p *Periph) StoreSHORTS(s Shorts) { p.Regs.StoreSHORTS(uint32(s)) }
 
-// ErrorBits is a bitfield that lists detected errors.
-type ErrorBits uint8
+// Error is a bitfield that lists detected errors.
+type Error uint8
 
 const (
-	EOVERRUN ErrorBits = 1 << 0
-	EPARITY  ErrorBits = 1 << 1
-	EFRAMING ErrorBits = 1 << 2
-	EBREAK   ErrorBits = 1 << 3
+	EOVERRUN Error = 1 << 0
+	EPARITY  Error = 1 << 1
+	EFRAMING Error = 1 << 2
+	EBREAK   Error = 1 << 3
 
 	EALL = EOVERRUN | EPARITY | EFRAMING | EBREAK
 )
 
-func (e ErrorBits) Error() string {
+func (e Error) Error() string {
 	if e == 0 {
 		return ""
 	}
@@ -108,12 +108,12 @@ func (e ErrorBits) Error() string {
 }
 
 // LoadERRORSRC returns error flags.
-func (p *Periph) LoadERRORSRC() ErrorBits {
-	return ErrorBits(p.errorsrc.Load())
+func (p *Periph) LoadERRORSRC() Error {
+	return Error(p.errorsrc.Load())
 }
 
 // ClearERRORSRC clears specfied error flags.
-func (p *Periph) ClearERRORSRC(e ErrorBits) {
+func (p *Periph) ClearERRORSRC(e Error) {
 	p.errorsrc.Store(uint32(e))
 }
 

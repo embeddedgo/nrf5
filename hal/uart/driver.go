@@ -345,7 +345,7 @@ const (
 	// because of the lack of free space in the driver's receive buffer.
 	ErrBufOverflow DriverError = iota + 1
 
-	// ErrTimeout is returned if timeout occured. It means that the read/write
+	// ErrTimeout is returned if a timeout occured. It means that the read/write
 	// operation has been interrupted. In case of write you can not determine
 	// the exact number of bytes sent to the remote party.
 	ErrTimeout
