@@ -23,7 +23,7 @@ func main() {
 	tts.UsePin(txpin, uart.TXD)
 	tts.SetBaudrate(uart.Baud115200)
 	tts.Enable()
-	tts.EnableRx(nil)
+	tts.EnableRx(64)
 
 	tts.WriteString("Ready!\r\n")
 

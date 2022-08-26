@@ -83,36 +83,37 @@ func (d *Driver) Disable() {
 	d.p.StoreENABLE(false)
 }
 
-// EnableRx enables the UART receiver. If rxbuf is not nil the Driver uses the
-// provided slice to buffer received data. Othewrise it allocates a small buffer
-// itself. At least 2-byte buffer is required, which is effectively one byte
-// buffer because the other byte always remains unused for efficient checking of
-// an empty state. You cannot rely on 6-byte hardware buffer as extension of the
-// software buffer because for the performance reasons the ISR will not return
-// until it has read all bytes from hardware. If the software buffer is full the
-// ISR simply drops read bytes until there is no more data to read. EnableRx
-// panics if the receiving is already enabled or rxbuf is too short.
-func (d *Driver) EnableRx(rxbuf []byte) {
+// EnableRx enables the UART receiver.
+//
+// It allocates an internal ring buffer of bufLen size. In most cases bufLen=64/
+// is good choise. Minimum buffer size is 2 which means effectively one byte
+// buffer because the other byte always remains unused for efficient checking
+// of an empty state.
+//
+// You cannot rely on 6-byte hardware buffer as extension of the software buffer
+// because for the performance reasons the ISR will not return until it has
+// read all bytes from hardware. If the software buffer is full the ISR simply
+// drops read bytes until there is no more data to read.
+//
+// EnableRx panics if the receiving is already enabled or bufLen is too small.
+func (d *Driver) EnableRx(bufLen int) {
 	if d.rxbuf != nil {
 		panic("enabled before")
 	}
-	if rxbuf == nil {
-		rxbuf = make([]byte, 64)
-	} else if len(rxbuf) < 2 {
+	if bufLen < 2 {
 		panic("rxbuf too short")
 	}
-	d.rxbuf = rxbuf
+	d.rxbuf = make([]byte, bufLen)
 	d.nextr = 0
 	d.nextw = 0
 	d.p.Event(RXDRDY).EnableIRQ()
 	d.p.Task(STARTRX).Trigger()
 }
 
-// DisableRx disables the UART receiver. The receive buffer is returned and no
-// longer referenced by driver. You can use the STOPRX and STARTRX tasks
-// directly if you want to temporary disable the receiver leaving the driver
-// intact.
-func (d *Driver) DisableRx() (rxbuf []byte) {
+// DisableRx disables the UART receiver. The receive buffer is freed.
+// You can use the STOPRX and STARTRX tasks directly if you want to temporary
+// disable the receiver leaving the driver intact.
+func (d *Driver) DisableRx() {
 	atomic.StoreUint32(&d.rxcmd, cmdStop)
 	d.p.Event(RXTO).Clear()
 	d.p.Event(RXTO).EnableIRQ()
@@ -120,7 +121,6 @@ func (d *Driver) DisableRx() (rxbuf []byte) {
 	d.rxready.Sleep(-1)
 	d.p.Event(RXDRDY).DisableIRQ()
 	d.p.Event(RXTO).DisableIRQ()
-	rxbuf = d.rxbuf
 	d.rxbuf = nil
 	return
 }
