@@ -122,7 +122,6 @@ func (d *Driver) DisableRx() {
 	d.p.Event(RXDRDY).DisableIRQ()
 	d.p.Event(RXTO).DisableIRQ()
 	d.rxbuf = nil
-	return
 }
 
 // UsePin configurs the specified pin to be used as signal s.
@@ -252,7 +251,7 @@ func (d *Driver) Len() int {
 	return n
 }
 
-func (d *Driver) waitRxData() int {
+func waitRxData(d *Driver) int {
 	nextw := atomic.LoadUint32(&d.nextw)
 	if nextw != d.nextr {
 		return int(nextw)
@@ -276,10 +275,10 @@ func (d *Driver) waitRxData() int {
 	if nextw != d.nextr {
 		return int(nextw)
 	}
-	panic("wakeup on empty buffer")
+	panic("empty rxbuf")
 }
 
-func (d *Driver) markDataRead(nextr int) error {
+func markDataRead(d *Driver, nextr int) error {
 	if nextr >= len(d.rxbuf) {
 		nextr -= len(d.rxbuf)
 	}
@@ -297,12 +296,12 @@ func (d *Driver) markDataRead(nextr int) error {
 // ReadByte reads one byte and returns error if detected. ReadByte blocks only
 // if the internal buffer is empty (d.Len() > 0 ensure non-blocking read).
 func (d *Driver) ReadByte() (b byte, err error) {
-	nextw := d.waitRxData()
+	nextw := waitRxData(d)
 	nextr := int(d.nextr)
 	if nextw == nextr {
 		return 0, ErrTimeout
 	}
-	return d.rxbuf[nextr], d.markDataRead(nextr + 1)
+	return d.rxbuf[nextr], markDataRead(d, nextr+1)
 }
 
 // Read reads up to len(p) bytes into p. It returns number of bytes read and an
@@ -312,7 +311,7 @@ func (d *Driver) Read(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
-	nextw := d.waitRxData()
+	nextw := waitRxData(d)
 	nextr := int(d.nextr)
 	if nextw == nextr {
 		return 0, ErrTimeout
@@ -325,7 +324,7 @@ func (d *Driver) Read(p []byte) (n int, err error) {
 			n += copy(p[n:], d.rxbuf[:nextw])
 		}
 	}
-	return n, d.markDataRead(nextr + n)
+	return n, markDataRead(d, nextr + n)
 }
 
 // SetReadTimeout sets the read timeout used by Read* functions.
