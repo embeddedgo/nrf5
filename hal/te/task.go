@@ -11,8 +11,8 @@ type Task struct {
 	u32 mmio.U32
 }
 
-// Trigger starts action corresponding to task.
-func (r *Task) Trigger() {
+// Trig starts action corresponding to task.
+func (r *Task) Trig() {
 	r.u32.Store(1)
 }
 

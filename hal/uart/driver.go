@@ -107,7 +107,7 @@ func (d *Driver) EnableRx(bufLen int) {
 	d.nextr = 0
 	d.nextw = 0
 	d.p.Event(RXDRDY).EnableIRQ()
-	d.p.Task(STARTRX).Trigger()
+	d.p.Task(STARTRX).Trig()
 }
 
 // DisableRx disables the UART receiver. The receive buffer is freed.
@@ -117,7 +117,7 @@ func (d *Driver) DisableRx() {
 	atomic.StoreUint32(&d.rxcmd, cmdStop)
 	d.p.Event(RXTO).Clear()
 	d.p.Event(RXTO).EnableIRQ()
-	d.p.Task(STOPRX).Trigger()
+	d.p.Task(STOPRX).Trig()
 	d.rxready.Sleep(-1)
 	d.p.Event(RXDRDY).DisableIRQ()
 	d.p.Event(RXTO).DisableIRQ()
@@ -201,13 +201,13 @@ func (d *Driver) ISR() {
 func (d *Driver) WriteByte(b byte) (err error) {
 	d.txn = 1
 	d.txdone.Clear()
-	d.p.Task(STARTTX).Trigger()
+	d.p.Task(STARTTX).Trig()
 	d.p.StoreTXD(b)
 	d.p.Event(TXDRDY).EnableIRQ()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	d.p.Task(STOPTX).Trigger()
+	d.p.Task(STOPTX).Trig()
 	d.p.Event(TXDRDY).DisableIRQ()
 	d.p.Event(TXDRDY).Clear()
 	return // BUG: in case of timeout the ISR can still run in multicore system
@@ -221,13 +221,13 @@ func (d *Driver) WriteString(s string) (n int, err error) {
 	d.txdata = s
 	d.txn = 1
 	d.txdone.Clear()
-	d.p.Task(STARTTX).Trigger()
+	d.p.Task(STARTTX).Trig()
 	d.p.StoreTXD(s[0])
 	d.p.Event(TXDRDY).EnableIRQ()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	d.p.Task(STOPTX).Trigger()
+	d.p.Task(STOPTX).Trig()
 	d.p.Event(TXDRDY).DisableIRQ()
 	d.p.Event(TXDRDY).Clear()
 	d.txdata = ""

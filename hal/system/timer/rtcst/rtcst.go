@@ -41,7 +41,7 @@ func Setup(st *rtc.Periph, ccn int) {
 	ove.DisablePPI()
 	ove.EnableIRQ()
 	st.IRQ().Enable(rtos.IntPrioSysTimer, 0)
-	st.Task(rtc.START).Trigger()
+	st.Task(rtc.START).Trig()
 	rtos.SetSystemTimer(nanotime, setAlarm)
 }
 

@@ -40,7 +40,7 @@ func AnalogInit(resBits int) {
 	p.StoreENABLE(true)
 
 	p.Event(CALIBRATEDONE).Clear()
-	p.Task(CALIBRATE).Trigger()
+	p.Task(CALIBRATE).Trig()
 	for !p.Event(CALIBRATEDONE).IsSet() {
 		runtime.Gosched()
 	}
@@ -62,12 +62,12 @@ func AnalogRead(ain gpio.AIN) int {
 	p.StorePSELP(0, ain)
 	p.StorePTR(unsafe.Pointer(&a))
 	p.Event(STARTED).Clear()
-	p.Task(START).Trigger()
+	p.Task(START).Trig()
 	p.Event(END).Clear() // clear END here to give more time for STARTED event
 	for !p.Event(STARTED).IsSet() {
 		// In practice the CPU never enters here
 	}
-	p.Task(SAMPLE).Trigger()
+	p.Task(SAMPLE).Trig()
 	for !p.Event(END).IsSet() {
 		// With Gosched this loop is executed 1-2 times instead of 181 times
 		// (10bit, Over4x).

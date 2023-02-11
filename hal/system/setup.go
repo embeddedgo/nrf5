@@ -13,10 +13,10 @@ import (
 func Setup(hfsrc, lfsrc clock.Source, lfena bool) {
 	clock.StoreLFCLKSRC(lfsrc)
 	if hfsrc == clock.XTAL {
-		clock.HFCLKSTART.Task().Trigger()
+		clock.HFCLKSTART.Task().Trig()
 	}
 	if lfena {
-		clock.LFCLKSTART.Task().Trigger()
+		clock.LFCLKSTART.Task().Trig()
 	}
 	for {
 		src, run := clock.LoadHFCLKSTAT()

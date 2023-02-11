@@ -86,11 +86,11 @@ func (d *Driver) WriteByte(b byte) (err error) {
 	p := d.p
 	p.StoreTXDPTR(unsafe.Pointer(&b))
 	p.StoreTXDMAXCNT(1)
-	p.Task(STARTTX).Trigger()
+	p.Task(STARTTX).Trig()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	p.Task(STOPTX).Trigger()
+	p.Task(STOPTX).Trig()
 	return
 }
 
@@ -102,11 +102,11 @@ func (d *Driver) Write(s []byte) (n int, err error) {
 	p := d.p
 	p.StoreTXDPTR(unsafe.Pointer(&s[0]))
 	p.StoreTXDMAXCNT(len(s))
-	p.Task(STARTTX).Trigger()
+	p.Task(STARTTX).Trig()
 	if !d.txdone.Sleep(d.timeoutTx) {
 		err = ErrTimeout
 	}
-	p.Task(STOPTX).Trigger()
+	p.Task(STOPTX).Trig()
 	return p.LoadTXDAMOUNT(), err
 }
 

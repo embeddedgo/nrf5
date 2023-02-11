@@ -110,7 +110,7 @@ func (d *Driver) WriteRead(out, in []byte) int {
 		d.done.Clear()
 		if n < 8 {
 			// avoid interrupts for small n
-			d.p.Task(START).Trigger()
+			d.p.Task(START).Trig()
 			for !d.p.Event(END).IsSet() {
 				if n > 1 {
 					n--
@@ -119,7 +119,7 @@ func (d *Driver) WriteRead(out, in []byte) int {
 			}
 		} else {
 			d.p.Event(END).EnableIRQ()
-			d.p.Task(START).Trigger()
+			d.p.Task(START).Trig()
 			d.done.Sleep(-1)
 		}
 		d.p.Event(END).Clear()
