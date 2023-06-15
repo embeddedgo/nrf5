@@ -63,7 +63,7 @@ func main() {
 
 	for {
 		examples.RotateDisplay(disp)
-		examples.DrawText(disp)
+		//examples.DrawText(disp)
 		examples.GraphicsTest(disp)
 	}
 }
