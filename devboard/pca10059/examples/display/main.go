@@ -11,7 +11,7 @@ import (
 	"github.com/embeddedgo/display/pix/displays"
 	"github.com/embeddedgo/display/pix/examples"
 
-	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
+	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/system"
 
 	"github.com/embeddedgo/nrf5/dci/tftdci"
 	"github.com/embeddedgo/nrf5/hal/clock"

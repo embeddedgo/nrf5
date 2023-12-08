@@ -14,7 +14,7 @@ import (
 	"github.com/embeddedgo/nrf5/hal/gpio"
 	"github.com/embeddedgo/nrf5/hal/spim"
 
-	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
+	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/system"
 )
 
 var drv *spim.Driver

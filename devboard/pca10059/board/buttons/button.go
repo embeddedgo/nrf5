@@ -7,7 +7,7 @@ package buttons
 import (
 	"github.com/embeddedgo/nrf5/hal/gpio"
 
-	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
+	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/system"
 )
 
 // Onboard buttons

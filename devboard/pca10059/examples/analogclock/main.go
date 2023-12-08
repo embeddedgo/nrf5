@@ -17,7 +17,7 @@ import (
 	"github.com/embeddedgo/display/pix/driver/imgdrv"
 	"github.com/embeddedgo/display/testdata"
 
-	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
+	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/system"
 
 	"github.com/embeddedgo/nrf5/dci/tftdci"
 	"github.com/embeddedgo/nrf5/hal/gpio"

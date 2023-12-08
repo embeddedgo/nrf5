@@ -12,7 +12,7 @@ import (
 	"github.com/embeddedgo/nrf5/hal/uarte"
 	"github.com/embeddedgo/nrf5/hal/uarte/uarte1"
 
-	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/init"
+	_ "github.com/embeddedgo/nrf5/devboard/pca10059/board/system"
 )
 
 func main() {
