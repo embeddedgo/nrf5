@@ -230,11 +230,12 @@ func (h *Hand) Update() {
 }
 
 func main() {
-	// External peripherals with their signals (original names)
+	// Declare signal lines of external peripherals
 
+	// IPS display.
 	var ips struct{ scl, sda, res, dc, cs, blk gpio.Pin }
 
-	// Assigning GPIO pins to the signals of external peripherals
+	// Assign GPIO pins to the signals of external peripherals
 
 	p0 := gpio.P(0)
 	ips.scl = p0.Pin(13)
