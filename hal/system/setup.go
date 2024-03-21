@@ -30,5 +30,5 @@ func Setup(hfsrc, lfsrc clock.Source, lfena bool) {
 			break
 		}
 	}
-	nvmc.NVMC().CACHEEN().Set()
+	nvmc.NVMC().ICACHECNF.SetBits(nvmc.CACHEEN)
 }
