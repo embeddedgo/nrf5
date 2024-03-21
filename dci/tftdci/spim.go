@@ -27,7 +27,7 @@ type SPIM struct {
 // according to the display controller specification. Note that the maximum
 // speed may be limited by the concrete instance of nRF5 SPI peripheral, the
 // bus topology and the specific display design.
-func NewSPIM(drv *spim.Driver, dc gpio.Pin, mode spim.Config, wf, rf spim.Freq) *SPIM {
+func NewSPIM(drv *spim.Driver, dc gpio.Pin, mode spim.Config, rf, wf spim.Freq) *SPIM {
 	dci := &SPIM{spi: drv, dc: dc, mode: mode, wf: wf, rf: rf}
 	dc.Clear()
 	dc.Setup(gpio.ModeOut)
