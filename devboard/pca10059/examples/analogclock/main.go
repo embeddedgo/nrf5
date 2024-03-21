@@ -255,7 +255,7 @@ func main() {
 	spi := spim3.Driver()
 	spi.UsePin(ips.scl, spim.SCK)
 	spi.UsePin(ips.sda, spim.MOSI)
-	dci := tftdci.NewSPIM(spi, ips.dc, spim.CPOL0|spim.CPHA0, spim.F16MHz, spim.F16MHz)
+	dci := tftdci.NewSPIM(spi, ips.dc, spim.CPOL0|spim.CPHA0, spim.F8MHz, spim.F16MHz)
 	dci.UseCSN(ips.cs, false)
 
 	// Reset
@@ -267,7 +267,7 @@ func main() {
 
 	// Initialize display and create the drawing area with origin in the center
 
-	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789(dci)
+	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789().New(dci)
 	a := disp.NewArea(disp.Bounds())
 	a.SetOrigin(a.Bounds().Max.Div(-2))
 

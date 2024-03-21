@@ -60,7 +60,7 @@ func start(dci *SPIM) {
 	dci.spi.Enable()
 }
 
-func (dci *SPIM) Cmd(p []byte) {
+func (dci *SPIM) Cmd(p []byte, _ int) {
 	if !dci.started {
 		start(dci)
 	}

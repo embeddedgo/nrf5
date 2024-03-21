@@ -28,7 +28,7 @@ func main() {
 	p0 := gpio.P(0)
 	scl := p0.Pin(13)
 	mosi := p0.Pin(15)
-	reset := p0.Pin(17)
+	reset := p0.Pin(17) // optional
 	dc := p0.Pin(20)
 	cs := p0.Pin(22)
 	miso := p0.Pin(24)
@@ -42,10 +42,8 @@ func main() {
 	spi.UsePin(scl, spim.SCK)
 	spi.UsePin(miso, spim.MISO)
 	spi.UsePin(mosi, spim.MOSI)
-	dci := tftdci.NewSPIM(spi, dc, spim.CPOL0|spim.CPHA0, spim.F16MHz, spim.F16MHz)
-	dci.UseCSN(cs, false)
 
-	// Reset
+	// Hardware reset - optional
 
 	reset.Clear()
 	time.Sleep(time.Millisecond)
@@ -53,14 +51,21 @@ func main() {
 
 	// Run
 
-	//disp := displays.Adafruit_0i96_128x64_OLED_SSD1306(dci)
-	//disp := displays.Adafruit_1i5_128x128_OLED_SSD1351(dci)
-	//disp := displays.Adafruit_1i54_240x240_IPS_ST7789(dci)
-	//disp := displays.Adafruit_2i8_240x320_TFT_ILI9341(dci)
-	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789(dci)
-	//disp := displays.MSP4022_4i0_320x480_TFT_ILI9486(dci)
-	//disp := displays.Waveshare_1i5_128x128_OLED_SSD1351(dci)
+	//dp := displays.Adafruit_0i96_128x64_OLED_SSD1306()
+	//dp := displays.Adafruit_1i5_128x128_OLED_SSD1351()
+	//dp := displays.Adafruit_1i54_240x240_IPS_ST7789()
+	dp := displays.Adafruit_2i8_240x320_TFT_ILI9341()
+	//dp := displays.ERTFTM_1i54_240x240_IPS_ST7789()
+	//dp := displays.MSP4022_4i0_320x480_TFT_ILI9486()
+	//dp := displays.Waveshare_1i5_128x128_OLED_SSD1351()
 
+	// TODO: use dp.MaxReadClk and dp.MaxWriteClk instead of F8MHz and F16MHz
+	dci := tftdci.NewSPIM(spi, dc, spim.CPOL0|spim.CPHA0, spim.F8MHz, spim.F16MHz)
+	dci.UseCSN(cs, false)
+
+	// Run
+
+	disp := dp.New(dci)
 	for {
 		examples.RotateDisplay(disp)
 		//examples.DrawText(disp)

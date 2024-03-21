@@ -70,7 +70,7 @@ func main() {
 	oled.res.Clear()
 	time.Sleep(time.Millisecond)
 	oled.res.Set()
-	disp.Init(displays.Adafruit_0i96_128x64_OLED_SSD1306(dci))
+	disp.Init(displays.Adafruit_0i96_128x64_OLED_SSD1306().New(dci))
 
 	// Run
 
