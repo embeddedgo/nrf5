@@ -43,8 +43,7 @@ func main() {
 	spi.UsePin(miso, spim.MISO)
 	spi.UsePin(mosi, spim.MOSI)
 
-	// Hardware reset - optional
-
+	// Hardware reset. Optional for most controllers (exception SSD1306).
 	reset.Clear()
 	time.Sleep(time.Millisecond)
 	reset.Set()
