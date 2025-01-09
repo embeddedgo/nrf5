@@ -1,5 +1,8 @@
 // Package qdec provides access to the registers of Quadrature Decoder (QDEC)
 // peripheral.
+
+//go:build ignore
+
 package qdec
 
 import (

@@ -95,7 +95,7 @@ func main() {
 
 	print("- add LED-Button service: ")
 
-	serviceUUID := &ble.UUID{0x1523, uuidType}
+	serviceUUID := &ble.UUID{Value: 0x1523, Type: uuidType}
 	serviceHandle, err := gatts.AddService(gatts.PrimaryService, serviceUUID)
 	checkStatus(err)
 
@@ -110,7 +110,7 @@ func main() {
 		},
 	}
 	val := gatts.Attr{
-		UUID: &ble.UUID{0x1524, uuidType},
+		UUID: &ble.UUID{Value: 0x1524, Type: uuidType},
 		Meta: &gatts.AttrMeta{
 			ReadPerm: gap.SecModeOpen,
 			Options:  gatts.ValStack,
@@ -124,7 +124,7 @@ func main() {
 
 	meta = gatts.CharMeta{Props: gatt.PropRead | gatt.PropWrite}
 	val = gatts.Attr{
-		UUID: &ble.UUID{0x1525, uuidType},
+		UUID: &ble.UUID{Value: 0x1525, Type: uuidType},
 		Meta: &gatts.AttrMeta{
 			ReadPerm:  gap.SecModeOpen,
 			WritePerm: gap.SecModeOpen,
@@ -164,7 +164,12 @@ func main() {
 
 	statusLED := leds.Green
 	btn := buttons.User.Read()
-	btnParams := gatts.HVXParams{btnHandles.Value, gatt.Notification, 0, 1}
+	btnParams := gatts.HVXParams{
+		Handle: btnHandles.Value,
+		Type:   gatt.Notification,
+		Offset: 0,
+		Len:    1,
+	}
 	connHandle := ble.ConnInvalid
 
 	for {
