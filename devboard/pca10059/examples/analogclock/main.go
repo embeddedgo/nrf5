@@ -265,9 +265,9 @@ func main() {
 	ips.res.Set()
 	ips.blk.Set()
 
-	// Initialize display and create the drawing area with origin in the center
+	// Initialize the display and create the drawing area with the origin in the center
 
-	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789().New(dci)
+	disp := displays.ERTFTM_1i54_240x240_IPS_ST7789.New(dci)
 	a := disp.NewArea(disp.Bounds())
 	a.SetOrigin(a.Bounds().Max.Div(-2))
 
